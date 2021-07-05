@@ -63,6 +63,9 @@ ApplicationWindow {
                     ctx.fillStyle = "white"
                     ctx.font="normal 30px monospace";
                     ctx.fillText("GAME OVER", 30, 200)
+                    ctx.font="normal 20px monospace";
+                    ctx.fillText("Press space", 40, 240)
+                    ctx.stroke()
                     return;
                 }
                 if (game_started != 0) {
@@ -70,6 +73,7 @@ ApplicationWindow {
                 }
                 ctx.fillStyle = "gray"
                 ctx.fillRect(0, 0, 240, 420)
+                ctx.fillRect(280, 100, 80, 40)
                 ctx.stroke()
 
                 // draw_board
@@ -90,6 +94,7 @@ ApplicationWindow {
                 draw_squares(ctx, 100, 280, rows)
 
                 // add level
+                ctx.fillStyle = "black"
                 ctx.fillText("Level", 280, 220)
                 ctx.clearRect(280, 220, 100, 20)
                 ctx.fillText(lines_count < 200 ? Math.floor(lines_count / 10)+1 : 20, 280, 240)

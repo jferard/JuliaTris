@@ -47,7 +47,7 @@ const qmlfile = joinpath(dirname(Base.source_path()), "qml", "tetris.qml")
 
 struct Tetromino
     color::String
-    arrays::Vector{Matrix{UInt8}}
+    arrays::Vector{Matrix{Int64}}
 end
 
 const TETROMINO_ROW_COUNT = 4
@@ -156,33 +156,35 @@ Z_tetromino = Tetromino(GREEN, [
 ])
 
 mutable struct CurrentTetromino
-    i::UInt16 # row
-    j::UInt16 # col
+    i::Int64 # row
+    j::Int64 # col
     tetromino::Tetromino
-    orientation::UInt8
+    orientation::Int64
 end
 
-function get_cur_tetromino_arr(cur_tetromino::CurrentTetromino)::Matrix{UInt8}
+function get_cur_tetromino_arr(cur_tetromino::CurrentTetromino)::Matrix{Int64}
     return cur_tetromino.tetromino.arrays[cur_tetromino.orientation]
 end
 
-function relative_to(cell_i, cell_j, cur_tetromino::CurrentTetromino)::Tuple{Int16, Int16}
-    return (cell_i - cur_tetromino.i, cell_j - cur_tetromino.j)
+function relative_to(cell_i, cell_j, cur_tetromino::CurrentTetromino)::Tuple{Int64, Int64}
+    # start at 1
+    return (cell_i - cur_tetromino.i + 1, cell_j - cur_tetromino.j + 1)
 end
 
 const ROW_COUNT = 20
+const HIDDEN_ROW_COUNT = TETROMINO_ROW_COUNT - 1
 const COL_COUNT = 10
 const BASE_SPEED = 3 + 2*20
 const SIDE = 20
 
 function create_board()::Matrix{Tetromino}
-    board = fill(no_tetromino, ROW_COUNT + 1, COL_COUNT + 2)
-    for i in 1:ROW_COUNT + 1
+    board = fill(no_tetromino, ROW_COUNT + 1 + HIDDEN_ROW_COUNT, COL_COUNT + 2)
+    for i in 1:ROW_COUNT + 1 + HIDDEN_ROW_COUNT
         board[i, 1] = wall_tetromino
         board[i, COL_COUNT + 2] = wall_tetromino
     end
     for j in 1:COL_COUNT + 1
-        board[ROW_COUNT + 1, j] = wall_tetromino
+        board[ROW_COUNT + 1 + HIDDEN_ROW_COUNT, j] = wall_tetromino
     end
     return board
 end
@@ -192,8 +194,8 @@ function random_tetromino()::Tetromino
 end
 
 mutable struct Game
-    round::UInt16
-    speed::UInt16
+    round::Int64
+    speed::Int64
     board::Matrix{Tetromino}
     cur_tetromino::CurrentTetromino
     next_tetromino::Tetromino
@@ -204,7 +206,9 @@ mutable struct Game
 
     function Game()
         board = create_board()
-        cur_tetromino = CurrentTetromino(0, (size(board)[2] - TETROMINO_COL_COUNT) / 2 + 1, random_tetromino(), 1)
+        tetro_i = 1
+        tetro_j::Int64 = (size(board)[2] - TETROMINO_COL_COUNT) / 2 + 1
+        cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
         next_tetromino = random_tetromino()
         return new(0, BASE_SPEED, board, cur_tetromino, next_tetromino, 0, 0, false, false)
     end
@@ -214,24 +218,33 @@ function reset(game::Game)
     game.board = create_board()
     game.round = 0
     game.speed = BASE_SPEED
-    game.cur_tetromino = CurrentTetromino(0, (size(game.board)[2] - TETROMINO_COL_COUNT) / 2 + 1, random_tetromino(), 1)
+    tetro_i = 1
+    tetro_j::Int64 = (size(game.board)[2] - TETROMINO_COL_COUNT) / 2 + 1
+    game.cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
     game.next_tetromino = random_tetromino()
     game.lines_count = 0
     game.score = 0
-    game.started = false
+    game.started = true
     game.over = false
 end
 
 function next_tetromino(game::Game)
     tetromino = game.next_tetromino
-    game.cur_tetromino = CurrentTetromino(0, (size(game.board)[2] - TETROMINO_COL_COUNT) / 2 + 1, tetromino, 1)
-    game.next_tetromino = random_tetromino()
+    tetro_i = 1
+    tetro_j::Int64 = (size(game.board)[2] - TETROMINO_COL_COUNT) / 2 + 1
+    if position_allowed(game, tetro_i, tetro_j, 1)
+        game.cur_tetromino = CurrentTetromino(tetro_i, tetro_j, tetromino, 1)
+        game.next_tetromino = random_tetromino()
+    else
+        game.started = false
+        game.over = true
+    end
 end
 
 
 keys = Vector{Int32}
 
-function position_allowed(game::Game, tetro_i, tetro_j, orientation)::Bool
+function position_allowed(game::Game, tetro_i::Int64, tetro_j::Int64, orientation::Int64)::Bool
     row_count, col_count = size(game.board)
     arr = game.cur_tetromino.tetromino.arrays[orientation]
     for k in 1:TETROMINO_ROW_COUNT
@@ -261,11 +274,6 @@ function merge_tetromino(game::Game)
             if arr[k, l] == 1
                 cell_i = cur_tetromino.i + k - 1 # caveat here
                 cell_j = cur_tetromino.j + l - 1
-                if cell_i <= 0
-                    game.over = true
-                    game.started = false
-                    return
-                end
                 if cell_i <= row_count && cell_j <= col_count
                     game.board[cell_i, cell_j] = cur_tetromino.tetromino
                 end
@@ -352,8 +360,8 @@ end
 function is_tetromino_there(game::Game, cell_i, cell_j)::Bool
     arr = get_cur_tetromino_arr(game.cur_tetromino)
     relative_i, relative_j = relative_to(cell_i, cell_j, game.cur_tetromino)
-    if 0 <= relative_i < TETROMINO_ROW_COUNT && 0 <= relative_j < TETROMINO_COL_COUNT
-        if arr[relative_i + 1, relative_j + 1] == 1
+    if 1 <= relative_i <= TETROMINO_ROW_COUNT && 1 <= relative_j <= TETROMINO_COL_COUNT
+        if arr[relative_i, relative_j] == 1
             return true
         end
     end
@@ -372,10 +380,7 @@ function key_press(key::Int32)
     global game
     if !game.started
         if key == KEY_SPACE
-            if game.over
-                reset(game)
-            end
-            game.started = true
+            reset(game)
         end
         return
     end
@@ -421,13 +426,13 @@ function get_board()::Vector{Vector{String}}
     global game
 
     row_count, col_count = size(game.board)
-    board = [["black" for _ in 1:col_count] for _ in 1:row_count]
-    for cell_i in 1:row_count
+    board = [["black" for _ in 1:col_count] for _ in 1+HIDDEN_ROW_COUNT:row_count]
+    for cell_i in 1+HIDDEN_ROW_COUNT:row_count
         for cell_j in 1:col_count
             color = get_color(game, cell_i, cell_j)
             for y in cell_i*SIDE:(cell_i + 1) * SIDE
                 for x in cell_j*SIDE:(cell_j + 1) * SIDE
-                    board[cell_i][cell_j] = color
+                    board[cell_i-HIDDEN_ROW_COUNT][cell_j] = color
                 end
             end
         end
