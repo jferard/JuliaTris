@@ -445,24 +445,9 @@ function get_next_tetromino()::Vector{Vector{String}}
     return [[arr[i, j] == 1 ? color : "black" for j in 1:TETROMINO_COL_COUNT] for i in 1:TETROMINO_ROW_COUNT]
 end
 
-function get_lines()::Int64
+function get_game_state()::Vector{Any}
     global game
-    return game.lines_count
-end
-
-function get_score()::Int64
-    global game
-    return game.score
-end
-
-function get_game_over()::Bool
-    global game
-    return game.over
-end
-
-function get_game_started()::Bool
-    global game
-    return game.started
+    return [game.lines_count, game.score, game.over, game.started]
 end
 
 game = Game()
@@ -470,11 +455,13 @@ game = Game()
 @qmlfunction update_game
 @qmlfunction get_board
 @qmlfunction get_next_tetromino
-@qmlfunction get_lines
-@qmlfunction get_score
-@qmlfunction get_game_over
-@qmlfunction get_game_started
+@qmlfunction get_game_state
 @qmlfunction key_press
+
+mutable struct Test
+    name::String
+    cost::Int64
+end
 
 loadqml(qmlfile)
 exec()

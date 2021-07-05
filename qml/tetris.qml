@@ -58,18 +58,16 @@ ApplicationWindow {
 
             onPaint: {
                 var ctx = tetris_canvas.getContext('2d');
-                if (!Julia.get_game_started() ) {
-                    // add game over
-                    if (Julia.get_game_over()) {
-                        ctx.fillStyle = "white"
-                        ctx.font="normal 30px monospace";
-                        ctx.fillText("GAME OVER", 30, 200)
-                        return;
-                    }
-                } else {
+                var [lines_count, score, game_over, game_started] = Julia.get_game_state()
+                if (game_over != 0) {
+                    ctx.fillStyle = "white"
+                    ctx.font="normal 30px monospace";
+                    ctx.fillText("GAME OVER", 30, 200)
+                    return;
+                }
+                if (game_started != 0) {
                     Julia.update_game()
                 }
-                ctx.font="normal 20px monospace";
                 ctx.fillStyle = "gray"
                 ctx.fillRect(0, 0, 240, 420)
                 ctx.stroke()
@@ -79,12 +77,11 @@ ApplicationWindow {
                 draw_squares(ctx, 0, 0, rows)
 
                 // add lines
-                var lines = Julia.get_lines();
                 ctx.font="normal 25px monospace";
                 ctx.fillStyle = "black"
                 ctx.fillText("Lines", 280, 30)
                 ctx.clearRect(280, 30, 100, 30)
-                ctx.fillText(lines, 280, 55)
+                ctx.fillText(lines_count, 280, 55)
 
                 // add next
                 ctx.font="normal 20px monospace";
@@ -95,11 +92,11 @@ ApplicationWindow {
                 // add level
                 ctx.fillText("Level", 280, 220)
                 ctx.clearRect(280, 220, 100, 20)
-                ctx.fillText(lines < 200 ? Math.floor(lines / 10)+1 : 20, 280, 240)
+                ctx.fillText(lines_count < 200 ? Math.floor(lines_count / 10)+1 : 20, 280, 240)
                 // add score
                 ctx.fillText("Score", 280, 280)
                 ctx.clearRect(280, 280, 100, 20)
-                ctx.fillText(Julia.get_score(), 280, 300)
+                ctx.fillText(score, 280, 300)
                 ctx.stroke()
                 // add help
                 ctx.font="normal 14px monospace";
@@ -108,9 +105,9 @@ ApplicationWindow {
                 ctx.fillText("↓ to drop", 270, 370)
                 ctx.stroke()
 
-                if (!Julia.get_game_started() ) {
-                     ctx.font="normal 20px monospace";
+                if (game_started == 0) {
                      ctx.fillStyle = "white"
+                     ctx.font="normal 20px monospace";
                      ctx.fillText("Press space", 40, 240)
                      ctx.stroke()
                 }
