@@ -59,100 +59,100 @@ marked_tetromino = Tetromino(GRAY, [])
 
 # https://en.wikipedia.org/wiki/Tetromino#One-sided_tetrominoes
 I_tetromino = Tetromino(AQUA, [
-    [1 1 1 1
+    [0 0 0 0
      0 0 0 0
-     0 0 0 0
+     1 1 1 1
      0 0 0 0],
-    [0 0 1 0
-     0 0 1 0
-     0 0 1 0
-     0 0 1 0],
+    [0 1 0 0
+     0 1 0 0
+     0 1 0 0
+     0 1 0 0],
 ])
 
 O_tetromino = Tetromino(YELLOW, [
-    [0 1 1 0
-     0 1 1 0
+    [0 0 0 0
      0 0 0 0
-     0 0 0 0],
+     0 1 1 0
+     0 1 1 0],
 ])
 
 T_tetromino = Tetromino(MAGENTA, [
-    [1 1 1 0
-     0 1 0 0
+    [0 0 0 0
      0 0 0 0
-     0 0 0 0],
-    [1 0 0 0
-     1 1 0 0
-     1 0 0 0
-     0 0 0 0],
-    [0 1 0 0
      1 1 1 0
-     0 0 0 0
-     0 0 0 0],
-    [0 0 1 0
+     0 1 0 0],
+    [0 0 0 0
+     0 1 0 0
      0 1 1 0
-     0 0 1 0
+     0 1 0 0],
+    [0 0 0 0
+     0 1 0 0
+     1 1 1 0
      0 0 0 0],
+    [0 0 0 0
+     0 1 0 0
+     1 1 0 0
+     0 1 0 0],
 ])
 
 J_tetromino = Tetromino(BLUE, [
-    [0 0 1 0
-     0 0 1 0
+    [0 0 0 0
+     0 0 0 0
+     1 1 1 0
+     0 0 1 0],
+    [0 0 0 0
      0 1 1 0
-     0 0 0 0],
-    [1 1 1 0
-     0 0 1 0
+     0 1 0 0
+     0 1 0 0],
+    [0 0 0 0
      0 0 0 0
-     0 0 0 0],
-    [0 1 1 0
+     1 0 0 0
+     1 1 1 0],
+    [0 0 0 0
      0 1 0 0
      0 1 0 0
-     0 0 0 0],
-    [0 1 0 0
-     0 1 1 1
-     0 0 0 0
-     0 0 0 0],
+     1 1 0 0],
 ])
 
 L_tetromino = Tetromino(ORANGE, [
-    [0 1 0 0
-     0 1 0 0
-     0 1 1 0
-     0 0 0 0],
-    [0 0 1 0
+    [0 0 0 0
+     0 0 0 0
      1 1 1 0
-     0 0 0 0
-     0 0 0 0],
-    [0 1 1 0
-     0 0 1 0
-     0 0 1 0
-     0 0 0 0],
-    [0 1 1 1
+     1 0 0 0],
+    [0 0 0 0
      0 1 0 0
-     0 0 0 0
+     0 1 0 0
+     0 1 1 0],
+    [0 0 0 0
+     0 0 1 0
+     1 1 1 0
      0 0 0 0],
+    [0 0 0 0
+     1 1 0 0
+     0 1 0 0
+     0 1 0 0],
 ])
 
 S_tetromino = Tetromino(RED, [
-    [0 1 1 0
-     0 0 1 1
+    [0 0 0 0
      0 0 0 0
-     0 0 0 0],
-    [0 0 1 0
      0 1 1 0
-     0 1 0 0
-     0 0 0 0],
+     0 0 1 1],
+    [0 0 0 0
+     0 0 1 0
+     0 1 1 0
+     0 1 0 0],
 ])
 
 Z_tetromino = Tetromino(GREEN, [
-    [0 1 1 0
-     1 1 0 0
+    [0 0 0 0
      0 0 0 0
-     0 0 0 0],
-    [0 1 0 0
      0 1 1 0
-     0 0 1 0
-     0 0 0 0],
+     1 1 0 0],
+    [0 0 0 0
+     0 1 0 0
+     0 1 1 0
+     0 0 1 0],
 ])
 
 mutable struct CurrentTetromino
@@ -442,7 +442,7 @@ function get_next_tetromino()::Vector{Vector{String}}
     arr = game.next_tetromino.arrays[1]
     color = game.next_tetromino.color
 
-    return [[arr[i, j] == 1 ? color : "black" for j in 1:TETROMINO_COL_COUNT] for i in 1:TETROMINO_ROW_COUNT]
+    return [[arr[i, j] == 1 ? color : "black" for j in 1:TETROMINO_COL_COUNT] for i in 3:TETROMINO_ROW_COUNT]
 end
 
 function get_game_state()::Vector{Any}
