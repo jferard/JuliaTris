@@ -53,7 +53,7 @@ end
 const TETROMINO_ROW_COUNT = 4
 const TETROMINO_COL_COUNT = 4
 
-wall_tetromino = Tetromino(GRAY, [])
+wall_tetromino = Tetromino(DARK_GRAY, [])
 no_tetromino = Tetromino(BLACK, [])
 marked_tetromino = Tetromino(GRAY, [])
 
@@ -174,7 +174,7 @@ end
 const ROW_COUNT = 20
 const HIDDEN_ROW_COUNT = TETROMINO_ROW_COUNT - 1
 const COL_COUNT = 10
-const BASE_SPEED = 3 + 2*20
+const BASE_SPEED = 3 + 2 * 20
 const SIDE = 20
 
 function create_board()::Matrix{Tetromino}
@@ -226,6 +226,8 @@ function reset(game::Game)
     game.score = 0
     game.started = true
     game.over = false
+    gameMap["game_started"] = 1
+    gameMap["game_over"] = 0
 end
 
 function next_tetromino(game::Game)
@@ -238,6 +240,8 @@ function next_tetromino(game::Game)
     else
         game.started = false
         game.over = true
+        gameMap["game_started"] = 0
+        gameMap["game_over"] = 1
     end
 end
 
@@ -329,7 +333,9 @@ function remove_lines(game::Game)
     end
     if lines_count >= 1
         game.lines_count += lines_count
+        gameMap["lines"] = game.lines_count
         game.score += [1000, 4000, 16000, 64000][lines_count]
+        gameMap["score"] = string(game.score)
         if game.lines_count % 10 == 0 && game.speed >= 3
             game.speed -= 2
         end
@@ -353,6 +359,7 @@ function move(game::Game)
             # check for line
             # check for failure
             next_tetromino(game)
+            gameMap["next"] = get_next_tetromino()
         end
     end
 end
@@ -420,6 +427,7 @@ end
 function update_game()
     global game
     move(game)
+    gameMap["board"] = get_board()
 end
 
 function get_board()::Vector{Vector{String}}
@@ -450,17 +458,13 @@ function get_next_tetromino()::Vector{Vector{String}}
     return [[arr[i, j] == 1 ? color : "black" for j in 1:TETROMINO_COL_COUNT] for i in 3:TETROMINO_ROW_COUNT]
 end
 
-function get_game_state()::Vector{Any}
-    global game
-    return [game.lines_count, game.score, game.over, game.started]
-end
-
 game = Game()
+gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 1,
+                               "game_over" => 0, "game_started" => 0, "board" => get_board(),
+                               "next" => get_next_tetromino()
+                               )
 
 @qmlfunction update_game
-@qmlfunction get_board
-@qmlfunction get_next_tetromino
-@qmlfunction get_game_state
 @qmlfunction key_press
 
 mutable struct Test
@@ -468,5 +472,6 @@ mutable struct Test
     cost::Int64
 end
 
-loadqml(qmlfile)
+
+loadqml(qmlfile, game=gameMap, TILE_SIZE=20)
 exec()

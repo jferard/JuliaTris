@@ -18,6 +18,7 @@
  this program. If not, see <http://www.gnu.org/licenses/>.
 */
 import QtQuick 2.0
+import QtQuick.Window 2.0
 import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.0
 import org.julialang 1.0
@@ -25,109 +26,144 @@ import org.julialang 1.0
 ApplicationWindow {
     id: tetris
     title: "JuliaTris"
-    width: 400
-    height: 500
+    width: 20*TILE_SIZE
+    height: 21*TILE_SIZE
     visible: true
 
-	ColumnLayout {
-        id: root
-        spacing: 6
+    Component.onCompleted: {
+        tetris.x = tetris.screen.virtualX + tetris.screen.width / 2 - tetris.width / 2;
+        tetris.y = tetris.screen.virtualY + tetris.screen.height / 2 - tetris.height / 2;
+    }
+
+    function draw_squares(ctx, start_y, start_x, rows) {
+        for (var i=0; i<rows.length; i++) {
+            var row = rows[i]
+            for (var j=0; j<row.length; j++) {
+                draw_square(ctx, start_y, start_x, i, j, row[j])
+            }
+        }
+    }
+
+    function draw_square(ctx, start_y, start_x, i, j, square_color) {
+        ctx.fillStyle = square_color
+        if (square_color == "black") {
+            ctx.fillRect(start_x + j*TILE_SIZE, start_y + i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+        } else {
+            ctx.fillRect(start_x + j*TILE_SIZE, start_y + i*TILE_SIZE, TILE_SIZE-1, TILE_SIZE-1)
+        }
+    }
+
+	RowLayout {
+        id: rows
+        spacing: 2*TILE_SIZE
         anchors.fill: parent
 
         Canvas {
+            width: 12*TILE_SIZE; height: 21*TILE_SIZE
             id: tetris_canvas
-            anchors.fill: parent
-
-            function draw_squares(ctx, start_y, start_x, rows) {
-                for (var i=0; i<rows.length; i++) {
-                    var row = rows[i]
-                    for (var j=0; j<row.length; j++) {
-                        draw_square(ctx, start_y, start_x, i, j, row[j])
-                    }
-                }
-            }
-
-            function draw_square(ctx, start_y, start_x, i, j, square_color) {
-                ctx.fillStyle = square_color
-                if (square_color == "black") {
-                    ctx.fillRect(start_x + j*20, start_y + i*20, 20, 20)
-                } else {
-                    ctx.fillRect(start_x + j*20, start_y + i*20, 19, 19)
-                }
-            }
 
             onPaint: {
                 var ctx = tetris_canvas.getContext('2d');
-                var [lines_count, score, game_over, game_started] = Julia.get_game_state()
-                if (game_over != 0) {
+                if (game.game_over != 0) {
                     ctx.fillStyle = "white"
                     ctx.font="normal 30px monospace";
-                    ctx.fillText("GAME OVER", 30, 200)
+                    ctx.fillText("GAME OVER", 1.5*TILE_SIZE, 8*TILE_SIZE)
                     ctx.font="normal 20px monospace";
-                    ctx.fillText("Press space", 40, 240)
+                    ctx.fillText("Press space", 2*TILE_SIZE, 10*TILE_SIZE)
                     ctx.stroke()
                     return;
                 }
-                if (game_started != 0) {
+                if (game.game_started != 0) {
                     Julia.update_game()
                 }
-                ctx.fillStyle = "gray"
-                ctx.fillRect(0, 0, 240, 420)
-                ctx.fillRect(280, 100, 80, 40)
-                ctx.stroke()
 
                 // draw_board
-                var rows = Julia.get_board()
+                var rows = game.board
+                ctx.fillStyle = "gray"
+                ctx.fillRect(0, 0, 12*TILE_SIZE, 21*TILE_SIZE)
                 draw_squares(ctx, 0, 0, rows)
 
-                // add lines
-                ctx.font="normal 25px monospace";
-                ctx.fillStyle = "black"
-                ctx.fillText("Lines", 280, 30)
-                ctx.clearRect(280, 30, 100, 30)
-                ctx.fillText(lines_count, 280, 55)
-
-                // add next
-                ctx.font="normal 20px monospace";
-                ctx.fillText("Next", 300, 85)
-                var rows = Julia.get_next_tetromino()
-                draw_squares(ctx, 100, 280, rows)
-
-                // add level
-                ctx.fillStyle = "black"
-                ctx.fillText("Level", 280, 220)
-                ctx.clearRect(280, 220, 100, 20)
-                ctx.fillText(lines_count < 200 ? Math.floor(lines_count / 10)+1 : 20, 280, 240)
-                // add score
-                ctx.fillText("Score", 280, 280)
-                ctx.clearRect(280, 280, 100, 20)
-                ctx.fillText(score, 280, 300)
-                ctx.stroke()
-                // add help
-                ctx.font="normal 14px monospace";
-                ctx.fillText("← → to move", 270, 340)
-                ctx.fillText("B N to rotate", 270, 355)
-                ctx.fillText("↓ to drop", 270, 370)
-                ctx.stroke()
-
-                if (game_started == 0) {
+                if (game.game_started == 0) {
                      ctx.fillStyle = "white"
                      ctx.font="normal 20px monospace";
-                     ctx.fillText("Press space", 40, 240)
+                     ctx.fillText("Press space", 2*TILE_SIZE, 10*TILE_SIZE)
                      ctx.stroke()
                 }
-           }
+            }
         }
 
-        Timer {
-            interval: 16
-            running: true
-            repeat: true
-            onTriggered: {
-                tetris_canvas.requestPaint();
-           }
+        ColumnLayout {
+            id: col_infos
+            Layout.alignment : Qt.AlignRight
+
+            Text {
+                id: lines
+                width: 8*TILE_SIZE; height: 2*TILE_SIZE
+                horizontalAlignment: Text.AlignRight
+
+                font.pointSize: 24
+                text: "Lines\n" + game.lines
+            }
+
+            Text {
+                id: next
+                width: 8*TILE_SIZE; height: 1*TILE_SIZE
+                horizontalAlignment: Text.AlignRight
+                font.pointSize: 20
+                text: "Next"
+            }
+
+            Canvas {
+                width: 8*TILE_SIZE; height: 2*TILE_SIZE
+                id: infos_canvas
+
+                onPaint: {
+                    var ctx = infos_canvas.getContext('2d');
+                    ctx.fillRect(0, 0, 4*TILE_SIZE, 2*TILE_SIZE)
+                    var rows = game.next
+                    draw_squares(ctx, 0, 0, rows)
+                }
+            }
+
+            Text {
+                function get_level(lines) {
+                    return (lines < 200 ? Math.floor(lines / 10)+1 : 20).toString()
+                }
+
+                id: level
+                width: 8*TILE_SIZE; height: 2*TILE_SIZE
+                font.pointSize: 20
+                horizontalAlignment: Text.AlignRight
+                text: "Level\n"+get_level(game.lines)
+            }
+
+            Text {
+                id: score
+                width: 8*TILE_SIZE; height: 1*TILE_SIZE
+                font.pointSize: 20
+                horizontalAlignment: Text.AlignRight
+                text: "Score\n" + game.score
+            }
+
+            Text {
+                id: help
+                width: 8*TILE_SIZE; height: 3*TILE_SIZE
+                font.pointSize: 10
+                text: "← → to move\nB N to rotate\n↓ to drop"
+            }
         }
+
 	}
+    Timer {
+        interval: 16
+        running: true
+        repeat: true
+        onTriggered: {
+            score.update();
+            tetris_canvas.requestPaint();
+            infos_canvas.requestPaint();
+         }
+    }
     Item {
         focus: true
         Keys.onPressed: {
