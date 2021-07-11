@@ -177,16 +177,12 @@ mutable struct CurrentTetromino <: Colored
     tetromino::Tetromino
     orientation::Int64
 end
+
 get_color(c::CurrentTetromino) = get_color(c.tetromino)
 
-function get_cur_tetromino_arr(cur_tetromino::CurrentTetromino)::Matrix{Int64}
-    return cur_tetromino.tetromino.arrays[cur_tetromino.orientation]
-end
+get_cur_tetromino_arr(cur_tetromino::CurrentTetromino)::Matrix{Int64} = cur_tetromino.tetromino.arrays[cur_tetromino.orientation]
 
-function relative_to(cell_i, cell_j, cur_tetromino::CurrentTetromino)::Tuple{Int64, Int64}
-    # start at 1
-    return (cell_i - cur_tetromino.i + 1, cell_j - cur_tetromino.j + 1)
-end
+relative_to(cell_i, cell_j, cur_tetromino::CurrentTetromino)::Tuple{Int64, Int64} = (cell_i - cur_tetromino.i + 1, cell_j - cur_tetromino.j + 1)
 
 const ROW_COUNT = 20
 const HIDDEN_ROW_COUNT = TETROMINO_ROW_COUNT - 1
@@ -208,9 +204,21 @@ function create_board()::Matrix{<: Colored}
     return board
 end
 
-function random_tetromino()::Tetromino
-    return [I_tetromino, O_tetromino, T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino][rand(1:7)]
-end
+is_full_line(line::Vector{<: Colored})::Bool = all(
+    map(1:size(line, 1)) do cell_j
+        line[cell_j] != no_tetromino
+    end
+)
+
+is_marked_line(line::Vector{<: Colored})::Bool = any(
+    map(1:size(line, 1)) do cell_j
+        line[cell_j] == marked_tetromino
+    end
+)
+
+
+
+random_tetromino()::Tetromino = [I_tetromino, O_tetromino, T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino][rand(1:7)]
 
 mutable struct Game
     round::Int64
@@ -234,7 +242,7 @@ mutable struct Game
     end
 end
 
-function reset(game::Game)
+function reset!(game::Game)
     game.board = create_board()
     game.round = 0
     game.speed = BASE_SPEED
@@ -251,7 +259,7 @@ function reset(game::Game)
     gameMap["game_over"] = 0
 end
 
-function next_tetromino(game::Game)
+function next_tetromino!(game::Game)
     tetromino = game.next_tetromino
     tetro_i = 1
     tetro_j::Int64 = (size(game.board)[2] - TETROMINO_COL_COUNT) / 2 + 1
@@ -265,9 +273,6 @@ function next_tetromino(game::Game)
         gameMap["game_over"] = 1
     end
 end
-
-
-keys = Vector{Int32}
 
 function position_allowed(game::Game, tetro_i::Int64, tetro_j::Int64, orientation::Int64)::Bool
     row_count, col_count = size(game.board)
@@ -290,7 +295,7 @@ function position_allowed(game::Game, tetro_i::Int64, tetro_j::Int64, orientatio
     return true
 end
 
-function merge_tetromino(game::Game)
+function merge_tetromino!(game::Game)
     cur_tetromino = game.cur_tetromino
     arr = get_cur_tetromino_arr(cur_tetromino)
     row_count, col_count = size(game.board)
@@ -307,26 +312,7 @@ function merge_tetromino(game::Game)
     end
 end
 
-function is_full_line(line::Vector{<:Colored})::Bool
-    # use any
-    for cell_j in 1:size(line, 1)
-        if line[cell_j] == no_tetromino
-            return false
-        end
-    end
-    return true
-end
-
-function is_marked_line(line::Vector{<:Colored})::Bool
-    for cell_j in 1:size(line, 1)
-        if line[cell_j] != marked_tetromino
-            return false
-        end
-    end
-    return true
-end
-
-function mark_lines(game::Game)
+function mark_lines!(game::Game)
     row_count, col_count = size(game.board)
     for cell_i in row_count - 1:-1:1
         if is_full_line(game.board[cell_i, 2:col_count - 1])
@@ -338,7 +324,7 @@ function mark_lines(game::Game)
     end
 end
 
-function remove_lines(game::Game)
+function remove_lines!(game::Game)
     row_count, col_count = size(game.board)
     cell_i = row_count - 1
     lines_count = 0
@@ -364,17 +350,17 @@ function remove_lines(game::Game)
     end
 end
 
-function move(game::Game)
+function move!(game::Game)
     cur_tetromino = game.cur_tetromino
     game.round = 0
     if position_allowed(game, cur_tetromino.i + 1, cur_tetromino.j, cur_tetromino.orientation)
         cur_tetromino.i += 1
     else
-        merge_tetromino(game)
-        mark_lines(game)
+        merge_tetromino!(game)
+        mark_lines!(game)
         # check for line
         # check for failure
-        next_tetromino(game)
+        next_tetromino!(game)
         gameMap["next"] = get_next_tetromino()
     end
 end
@@ -404,7 +390,7 @@ function key_press(key::Int32)
     global game
     if !game.started
         if key == KEY_SPACE
-            reset(game)
+            reset!(game)
         end
         return
     end
@@ -449,10 +435,10 @@ function update_game()
     game.round += 1
     if game.round >= game.speed
         if game.marked
-            remove_lines(game)
+            remove_lines!(game)
             game.marked = false
         else
-            move(game)
+            move!(game)
         end
     end
     gameMap["board"] = get_board()
