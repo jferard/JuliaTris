@@ -53,121 +53,16 @@ ApplicationWindow {
         }
     }
 
-	RowLayout {
-        id: rows
-        spacing: 2*TILE_SIZE
-        anchors.fill: parent
+    Game {
+        id: tetris_game
+    }
 
-        Canvas {
-            width: 12*TILE_SIZE; height: 21*TILE_SIZE
-            id: tetris_canvas
-
-            onPaint: {
-                var ctx = tetris_canvas.getContext('2d');
-                if (game.game_over != 0) {
-                    ctx.fillStyle = "white"
-                    ctx.font="normal 30px monospace";
-                    ctx.fillText("GAME OVER", 1.5*TILE_SIZE, 8*TILE_SIZE)
-                    ctx.font="normal 20px monospace";
-                    ctx.fillText("Press space", 2*TILE_SIZE, 10*TILE_SIZE)
-                    ctx.stroke()
-                    return;
-                }
-                if (game.game_started != 0) {
-                    Julia.update_game()
-                }
-
-                // draw_board
-                var rows = game.board
-                ctx.fillStyle = "gray"
-                ctx.fillRect(0, 0, 12*TILE_SIZE, 21*TILE_SIZE)
-                draw_squares(ctx, 0, 0, rows)
-
-                if (game.game_started == 0) {
-                     ctx.fillStyle = "white"
-                     ctx.font="normal 20px monospace";
-                     ctx.fillText("Press space", 2*TILE_SIZE, 10*TILE_SIZE)
-                     ctx.stroke()
-                }
-            }
-        }
-
-        ColumnLayout {
-            id: col_infos
-            Layout.alignment : Qt.AlignRight
-
-            Text {
-                id: lines
-                width: 8*TILE_SIZE; height: 2*TILE_SIZE
-                horizontalAlignment: Text.AlignRight
-
-                font.pointSize: 24
-                text: "Lines\n" + game.lines
-            }
-
-            Text {
-                id: next
-                width: 8*TILE_SIZE; height: 1*TILE_SIZE
-                horizontalAlignment: Text.AlignRight
-                font.pointSize: 20
-                text: "Next"
-            }
-
-            Canvas {
-                width: 8*TILE_SIZE; height: 2*TILE_SIZE
-                id: infos_canvas
-
-                onPaint: {
-                    var ctx = infos_canvas.getContext('2d');
-                    ctx.fillRect(0, 0, 4*TILE_SIZE, 2*TILE_SIZE)
-                    var rows = game.next
-                    draw_squares(ctx, 0, 0, rows)
-                }
-            }
-
-            Text {
-                function get_level(lines) {
-                    return (lines < 200 ? Math.floor(lines / 10)+1 : 20).toString()
-                }
-
-                id: level
-                width: 8*TILE_SIZE; height: 2*TILE_SIZE
-                font.pointSize: 20
-                horizontalAlignment: Text.AlignRight
-                text: "Level\n"+get_level(game.lines)
-            }
-
-            Text {
-                id: score
-                width: 8*TILE_SIZE; height: 1*TILE_SIZE
-                font.pointSize: 20
-                horizontalAlignment: Text.AlignRight
-                text: "Score\n" + game.score
-            }
-
-            Text {
-                width: 8*TILE_SIZE; height: 3*TILE_SIZE
-                font.pointSize: 10
-                text: "Best\nLines: "+best.lines_count +"\nScore: "+best.score
-            }
-
-            Text {
-                id: help
-                width: 8*TILE_SIZE; height: 3*TILE_SIZE
-                font.pointSize: 10
-                text: "← → to move\nB N to rotate\n↓ to drop"
-            }
-        }
-
-	}
     Timer {
         interval: 16
         running: true
         repeat: true
         onTriggered: {
-            score.update();
-            tetris_canvas.requestPaint();
-            infos_canvas.requestPaint();
+            tetris_game.update()
          }
     }
     Item {
