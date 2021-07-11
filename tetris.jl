@@ -21,6 +21,7 @@ ENV["QSG_RENDER_LOOP"] = "basic"
 
 using QML
 using Qt5QuickControls_jll
+using JSON
 
 const DARK_GRAY = "dark gray"
 const GRAY = "gray"
@@ -347,6 +348,12 @@ function remove_lines!(game::Game)
         if game.lines_count % 10 == 0 && game.speed >= 3
             game.speed -= 2
         end
+        if game.lines_count > bestMap["lines_count"]
+            bestMap["lines_count"] = game.lines_count
+        end
+        if game.score > bestMap["score"]
+            bestMap["score"] = game.score
+        end
     end
 end
 
@@ -472,20 +479,30 @@ function get_next_tetromino()::Vector{Vector{String}}
     return [[arr[i, j] == 1 ? color : "black" for j in 1:TETROMINO_COL_COUNT] for i in 3:TETROMINO_ROW_COUNT]
 end
 
+@qmlfunction update_game
+@qmlfunction key_press
+
+
 game = Game()
 gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 1,
                                "game_over" => 0, "game_started" => 0, "board" => get_board(),
                                "next" => get_next_tetromino()
                                )
 
-@qmlfunction update_game
-@qmlfunction key_press
-
-mutable struct Test
-    name::String
-    cost::Int64
+bestMap = QML.JuliaPropertyMap("lines_count" => 0, "score" => 0)
+try
+    open("juliatris.json", "r") do source
+        global bestMap
+        best = JSON.parse(source)
+        bestMap = QML.JuliaPropertyMap(best)
+    end
+catch e
+    println(e)
 end
 
-
-loadqml(qmlfile, game=gameMap, TILE_SIZE=20)
+loadqml(qmlfile, game=gameMap, TILE_SIZE=20, best=bestMap)
 exec()
+
+open("juliatris.json", "w") do dest
+    JSON.print(dest, bestMap)
+end

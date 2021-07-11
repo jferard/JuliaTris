@@ -146,6 +146,12 @@ ApplicationWindow {
             }
 
             Text {
+                width: 8*TILE_SIZE; height: 3*TILE_SIZE
+                font.pointSize: 10
+                text: "Best\nLines: "+best.lines_count +"\nScore: "+best.score
+            }
+
+            Text {
                 id: help
                 width: 8*TILE_SIZE; height: 3*TILE_SIZE
                 font.pointSize: 10
