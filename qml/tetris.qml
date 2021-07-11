@@ -53,23 +53,37 @@ ApplicationWindow {
         }
     }
 
-    Game {
-        id: tetris_game
-    }
-
-    Timer {
-        interval: 16
-        running: true
-        repeat: true
-        onTriggered: {
-            tetris_game.update()
-         }
-    }
-    Item {
+    StackView {
+        id: stack
         focus: true
+        initialItem: intro
         Keys.onPressed: {
             Julia.key_press(event.key)
             event.accepted = true;
         }
+    }
+
+    Item {
+        id: intro
+        visible: false
+
+        Rectangle {
+            width: 20*TILE_SIZE; height: 20*TILE_SIZE
+            color: "gray"
+
+            Button {
+                width: 4*TILE_SIZE; height: 4*TILE_SIZE
+                text: "start"
+                onClicked: {
+                    stack.push(tetris_game)
+                    tetris_game.start()
+                }
+            }
+        }
+    }
+
+    Game {
+        id: tetris_game
+        visible: false
     }
 }
