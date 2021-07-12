@@ -23,16 +23,12 @@ using QML
 using Qt5QuickControls_jll
 using JSON
 
-const DARK_GRAY = "dark gray"
-const GRAY = "gray"
-const BLACK = "black"
-const RED = "red"
-const GREEN = "green"
-const BLUE = "blue"
-const AQUA = "aqua"
-const YELLOW = "yellow"
-const MAGENTA = "magenta"
-const ORANGE = "orange"
+include("Colors.jl")
+include("Tetrominos.jl")
+
+using .Colors
+import .Colors: get_color
+using .Tetrominos
 
 # from https://doc.qt.io/qt-5/qt.html#Key-enum
 const KEY_ESCAPE = 0x01000000
@@ -46,18 +42,6 @@ const KEY_N = 0x4e
 
 const qmlfile = joinpath(dirname(Base.source_path()), "qml", "tetris.qml")
 
-abstract type Colored end
-function get_color(c::Colored)::String end
-
-struct Tetromino <: Colored
-    color::String
-    arrays::Vector{Matrix{Int64}}
-end
-get_color(t::Tetromino)::String = t.color
-
-const TETROMINO_ROW_COUNT = 4
-const TETROMINO_COL_COUNT = 4
-
 struct Wall <: Colored end
 get_color(w::Wall)::String = DARK_GRAY
 
@@ -70,107 +54,9 @@ function get_color(m::Marked)::String
     return [RED, ORANGE, YELLOW, GREEN, BLUE, MAGENTA][game.round % 6 + 1]
 end
 
-wall_tetromino = Wall()
-no_tetromino = Empty()
-marked_tetromino = Marked()
-
-# https://en.wikipedia.org/wiki/Tetromino#One-sided_tetrominoes
-I_tetromino = Tetromino(AQUA, [
-    [0 0 0 0
-     0 0 0 0
-     1 1 1 1
-     0 0 0 0],
-    [0 1 0 0
-     0 1 0 0
-     0 1 0 0
-     0 1 0 0],
-])
-
-O_tetromino = Tetromino(YELLOW, [
-    [0 0 0 0
-     0 0 0 0
-     0 1 1 0
-     0 1 1 0],
-])
-
-T_tetromino = Tetromino(MAGENTA, [
-    [0 0 0 0
-     0 0 0 0
-     1 1 1 0
-     0 1 0 0],
-    [0 0 0 0
-     0 1 0 0
-     0 1 1 0
-     0 1 0 0],
-    [0 0 0 0
-     0 1 0 0
-     1 1 1 0
-     0 0 0 0],
-    [0 0 0 0
-     0 1 0 0
-     1 1 0 0
-     0 1 0 0],
-])
-
-J_tetromino = Tetromino(BLUE, [
-    [0 0 0 0
-     0 0 0 0
-     1 1 1 0
-     0 0 1 0],
-    [0 0 0 0
-     0 1 1 0
-     0 1 0 0
-     0 1 0 0],
-    [0 0 0 0
-     0 0 0 0
-     1 0 0 0
-     1 1 1 0],
-    [0 0 0 0
-     0 1 0 0
-     0 1 0 0
-     1 1 0 0],
-])
-
-L_tetromino = Tetromino(ORANGE, [
-    [0 0 0 0
-     0 0 0 0
-     1 1 1 0
-     1 0 0 0],
-    [0 0 0 0
-     0 1 0 0
-     0 1 0 0
-     0 1 1 0],
-    [0 0 0 0
-     0 0 1 0
-     1 1 1 0
-     0 0 0 0],
-    [0 0 0 0
-     1 1 0 0
-     0 1 0 0
-     0 1 0 0],
-])
-
-S_tetromino = Tetromino(RED, [
-    [0 0 0 0
-     0 0 0 0
-     0 1 1 0
-     0 0 1 1],
-    [0 0 0 0
-     0 0 1 0
-     0 1 1 0
-     0 1 0 0],
-])
-
-Z_tetromino = Tetromino(GREEN, [
-    [0 0 0 0
-     0 0 0 0
-     0 1 1 0
-     1 1 0 0],
-    [0 0 0 0
-     0 1 0 0
-     0 1 1 0
-     0 0 1 0],
-])
+wall = Wall()
+empty = Empty()
+marked = Marked()
 
 mutable struct CurrentTetromino <: Colored
     i::Int64 # row
@@ -186,7 +72,7 @@ get_cur_tetromino_arr(cur_tetromino::CurrentTetromino)::Matrix{Int64} = cur_tetr
 relative_to(cell_i, cell_j, cur_tetromino::CurrentTetromino)::Tuple{Int64, Int64} = (cell_i - cur_tetromino.i + 1, cell_j - cur_tetromino.j + 1)
 
 const ROW_COUNT = 20
-const HIDDEN_ROW_COUNT = TETROMINO_ROW_COUNT - 1
+const HIDDEN_ROW_COUNT = TETROlMINO_ROW_COUNT - 1
 const COL_COUNT = 10
 const BASE_SPEED = 3 + 2 * 20
 const SIDE = 20
@@ -194,32 +80,30 @@ const SIDE = 20
 BoardCell = Union{Empty, Wall, Tetromino, Marked}
 
 function create_board()::Matrix{<: Colored}
-    board::Matrix{BoardCell} = fill(no_tetromino, ROW_COUNT + 1 + HIDDEN_ROW_COUNT, COL_COUNT + 2)
+    board::Matrix{BoardCell} = fill(empty, ROW_COUNT + 1 + HIDDEN_ROW_COUNT, COL_COUNT + 2)
     for i in 1:ROW_COUNT + 1 + HIDDEN_ROW_COUNT
-        board[i, 1] = wall_tetromino
-        board[i, COL_COUNT + 2] = wall_tetromino
+        board[i, 1] = wall
+        board[i, COL_COUNT + 2] = wall
     end
     for j in 1:COL_COUNT + 1
-        board[ROW_COUNT + 1 + HIDDEN_ROW_COUNT, j] = wall_tetromino
+        board[ROW_COUNT + 1 + HIDDEN_ROW_COUNT, j] = wall
     end
     return board
 end
 
 is_full_line(line::Vector{<: Colored})::Bool = all(
     map(1:size(line, 1)) do cell_j
-        line[cell_j] != no_tetromino
+        line[cell_j] != empty
     end
 )
 
 is_marked_line(line::Vector{<: Colored})::Bool = any(
     map(1:size(line, 1)) do cell_j
-        line[cell_j] == marked_tetromino
+        line[cell_j] == marked
     end
 )
 
 
-
-random_tetromino()::Tetromino = [I_tetromino, O_tetromino, T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino][rand(1:7)]
 
 mutable struct Game
     round::Int64
@@ -287,7 +171,7 @@ function position_allowed(game::Game, tetro_i::Int64, tetro_j::Int64, orientatio
                     return true
                 elseif cell_i > row_count || cell_j <= 0 || cell_j > col_count
                     return false
-                elseif game.board[cell_i, cell_j] != no_tetromino
+                elseif game.board[cell_i, cell_j] != empty
                     return false
                 end
             end
@@ -334,7 +218,7 @@ function remove_lines!(game::Game)
             for i in cell_i:-1:2
                 game.board[i, :] = game.board[i - 1, :]
             end
-            game.board[1, :] = [i == 1 || i == col_count ? wall_tetromino : no_tetromino for i in 1:col_count]
+            game.board[1, :] = [i == 1 || i == col_count ? wall : empty for i in 1:col_count]
             lines_count += 1
         else
             cell_i -= 1
