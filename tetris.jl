@@ -479,15 +479,22 @@ function get_next_tetromino()::Vector{Vector{String}}
     return [[arr[i, j] == 1 ? color : "black" for j in 1:TETROMINO_COL_COUNT] for i in 3:TETROMINO_ROW_COUNT]
 end
 
+game = nothing
+gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 1,
+                               "game_over" => 0, "game_started" => 0, "board" => [],
+                               "next" => []
+                               )
+
+function init_game()
+    global game, gameMap
+    game = Game()
+    gameMap["board"] = get_board()
+    gameMap["next"] = get_next_tetromino()
+end
+
+@qmlfunction init_game
 @qmlfunction update_game
 @qmlfunction key_press
-
-
-game = Game()
-gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 1,
-                               "game_over" => 0, "game_started" => 0, "board" => get_board(),
-                               "next" => get_next_tetromino()
-                               )
 
 bestMap = QML.JuliaPropertyMap("lines_count" => 0, "score" => 0)
 try

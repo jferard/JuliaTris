@@ -56,30 +56,16 @@ ApplicationWindow {
     StackView {
         id: stack
         focus: true
-        initialItem: intro
+        initialItem: menu
         Keys.onPressed: {
             Julia.key_press(event.key)
             event.accepted = true;
         }
     }
 
-    Item {
-        id: intro
+    TetrisMenu {
+        id: menu
         visible: false
-
-        Rectangle {
-            width: 20*TILE_SIZE; height: 20*TILE_SIZE
-            color: "gray"
-
-            Button {
-                width: 4*TILE_SIZE; height: 4*TILE_SIZE
-                text: "start"
-                onClicked: {
-                    stack.push(tetris_game)
-                    tetris_game.start()
-                }
-            }
-        }
     }
 
     Game {

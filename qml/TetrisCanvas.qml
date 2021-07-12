@@ -15,10 +15,6 @@ Canvas {
             ctx.stroke()
             return;
         }
-        if (game.game_started != 0) {
-            Julia.update_game()
-        }
-
         // draw_board
         var rows = game.board
         ctx.fillStyle = "gray"
