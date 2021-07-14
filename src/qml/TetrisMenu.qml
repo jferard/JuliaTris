@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.0
 
 Item {
     function start(gameType) {
-        tetris_game.start(gameType, level.value, height.value)
+        tetrisGame.start(gameType, level.value, height.value)
     }
 
     Column {
@@ -29,7 +29,7 @@ Item {
                 width: 5*TILE_SIZE; height: 4*TILE_SIZE
                 text: "Unlimited"
                 onClicked: {
-                    stack.push(tetris_game)
+                    stack.push(tetrisGame)
                     start("unlimited")
                 }
             }
@@ -37,7 +37,7 @@ Item {
                 width: 5*TILE_SIZE; height: 4*TILE_SIZE
                 text: "25 lines"
                 onClicked: {
-                    stack.push(tetris_game)
+                    stack.push(tetrisGame)
                     start("25")
                 }
             }
@@ -45,7 +45,7 @@ Item {
                 width: 5*TILE_SIZE; height: 4*TILE_SIZE
                 text: "Touch ground!"
                 onClicked: {
-                    stack.push(tetris_game)
+                    stack.push(tetrisGame)
                     start("ground")
                 }
             }
@@ -53,7 +53,7 @@ Item {
                 width: 5*TILE_SIZE; height: 4*TILE_SIZE
                 text: "The cleaner"
                 onClicked: {
-                    stack.push(tetris_game)
+                    stack.push(tetrisGame)
                     start("cleaner")
                 }
             }
@@ -124,7 +124,7 @@ Item {
                 width: 4*TILE_SIZE; height: 4*TILE_SIZE
                 text: "Classic"
                 onClicked: {
-                    stack.push(tetris_game)
+                    stack.push(tetrisGame)
                     start("classic")
                 }
             }

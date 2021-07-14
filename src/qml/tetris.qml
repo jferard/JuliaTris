@@ -35,21 +35,21 @@ ApplicationWindow {
         tetris.y = tetris.screen.virtualY + tetris.screen.height / 2 - tetris.height / 2;
     }
 
-    function draw_squares(ctx, start_y, start_x, rows) {
+    function drawSquares(ctx, startY, startX, rows) {
         for (var i=0; i<rows.length; i++) {
             var row = rows[i]
             for (var j=0; j<row.length; j++) {
-                draw_square(ctx, start_y, start_x, i, j, row[j])
+                drawSquare(ctx, startY, startX, i, j, row[j])
             }
         }
     }
 
-    function draw_square(ctx, start_y, start_x, i, j, square_color) {
-        ctx.fillStyle = square_color
-        if (square_color == "black") {
-            ctx.fillRect(start_x + j*TILE_SIZE, start_y + i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+    function drawSquare(ctx, startY, startX, i, j, squareColor) {
+        ctx.fillStyle = squareColor
+        if (squareColor == "black") {
+            ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
         } else {
-            ctx.fillRect(start_x + j*TILE_SIZE, start_y + i*TILE_SIZE, TILE_SIZE-1, TILE_SIZE-1)
+            ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE-1, TILE_SIZE-1)
         }
     }
 
@@ -69,7 +69,7 @@ ApplicationWindow {
     }
 
     Game {
-        id: tetris_game
+        id: tetrisGame
         visible: false
     }
 }

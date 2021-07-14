@@ -6,7 +6,7 @@ ColumnLayout {
     signal update()
 
     onUpdate: {
-        infos_canvas.requestPaint()
+        nextCanvas.requestPaint()
     }
 
     Text {
@@ -20,13 +20,13 @@ ColumnLayout {
 
     Canvas {
         width: 8*TILE_SIZE; height: 2*TILE_SIZE
-        id: infos_canvas
+        id: nextCanvas
 
         onPaint: {
-            var ctx = infos_canvas.getContext('2d');
+            var ctx = nextCanvas.getContext('2d');
             ctx.fillRect(0, 0, 4*TILE_SIZE, 2*TILE_SIZE)
             var rows = game.next
-            draw_squares(ctx, 0, 0, rows)
+            drawSquares(ctx, 0, 0, rows)
         }
     }
 }

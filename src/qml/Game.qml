@@ -17,17 +17,17 @@ Item {
         spacing: 2*TILE_SIZE
 
         TetrisCanvas {
-            id: tetris_canvas
+            id: tetrisCanvas
         }
 
         ColumnLayout {
-            id: col_infos
+            id: infosColumn
             Layout.alignment : Qt.AlignRight
 
             Lines {}
 
             Next {
-                id: next_box
+                id: nextBox
             }
 
             Score {}
@@ -44,11 +44,11 @@ Item {
         running: true
         repeat: true
         onTriggered: {
-            if (game.game_started != 0) {
+            if (game.gameStarted != 0) {
                 Julia.update_game()
             }
-            tetris_canvas.requestPaint();
-            next_box.update();
+            tetrisCanvas.requestPaint();
+            nextBox.update();
          }
     }
 }

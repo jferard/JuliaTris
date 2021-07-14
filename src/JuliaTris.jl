@@ -96,8 +96,8 @@ function reset!(game::Game)
     game.marked = false
     game.started = true
     game.over = false
-    gameMap["game_started"] = 1
-    gameMap["game_over"] = 0
+    gameMap["gameStarted"] = 1
+    gameMap["gameOver"] = 0
 end
 
 function next_tetromino!(game::Game)
@@ -110,8 +110,8 @@ function next_tetromino!(game::Game)
     else
         game.started = false
         game.over = true
-        gameMap["game_started"] = 0
-        gameMap["game_over"] = 1
+        gameMap["gameStarted"] = 0
+        gameMap["gameOver"] = 1
     end
 end
 
@@ -149,8 +149,8 @@ function remove_lines!(game::Game)
         # update maps
         gameMap["lines"] = game.lines_count
         gameMap["score"] = string(game.score)
-        if game.lines_count > bestMap["lines_count"]
-            bestMap["lines_count"] = game.lines_count
+        if game.lines_count > bestMap["linesCount"]
+            bestMap["linesCount"] = game.lines_count
         end
         if game.score > bestMap["score"]
             bestMap["score"] = game.score
@@ -248,7 +248,7 @@ end
 
 game = nothing
 gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 1,
-                               "game_over" => 0, "game_started" => 0, "board" => [],
+                               "gameOver" => 0, "gameStarted" => 0, "board" => [],
                                "next" => []
                                )
 
@@ -263,7 +263,7 @@ end
 @qmlfunction update_game
 @qmlfunction key_press
 
-bestMap = QML.JuliaPropertyMap("lines_count" => 0, "score" => 0)
+bestMap = QML.JuliaPropertyMap("linesCount" => 0, "score" => 0)
 try
     open("juliatris.json", "r") do source
         global bestMap
