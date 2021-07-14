@@ -125,7 +125,7 @@ Item {
                 text: "Classic"
                 onClicked: {
                     stack.push(tetrisGame)
-                    start("classic")
+                    tetrisGame.start("unlimited", level.value, 0)
                 }
             }
         }

@@ -12,6 +12,7 @@ export BoardCell, GameBoard, new_empty_board, position_allowed, merge_tetromino!
 using ..Colors
 import ..Colors: get_color
 using ..Tetrominos
+import ..Tetrominos: random_tetromino_or_empty
 using ..CurrentTetrominos
 import ..CurrentTetrominos: get_cur_tetromino_arr
 
@@ -24,10 +25,19 @@ mutable struct GameBoard
     rows::Matrix{<: Colored}
 end
 
-function new_empty_board(row_count, hidden_row_count, col_count)::GameBoard
+function new_empty_board(row_count, hidden_row_count, col_count, height)::GameBoard
     rows::Matrix{BoardCell} = fill(empty_square, row_count + hidden_row_count, col_count)
-    for i in 1:row_count + hidden_row_count
+    to = row_count + hidden_row_count
+    from = to - height
+    for i in 1:from-1
         rows[i, 1] = wall
+        rows[i, col_count] = wall
+    end
+    for i in from:to
+        rows[i, 1] = wall
+        for j in 2:col_count-1
+            rows[i, j] = random_tetromino_or_empty()
+        end
         rows[i, col_count] = wall
     end
     for j in 2:col_count - 1

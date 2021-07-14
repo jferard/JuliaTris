@@ -5,11 +5,10 @@ import QtQuick.Layouts 1.0
 import org.julialang 1.0
 
 Item {
-    signal start(string x)
+    signal start(string gameType, int level, int height)
 
     onStart: {
-        console.log(x)
-        Julia.init_game()
+        Julia.init_game(gameType, level, height)
         timer.running = true
     }
 
@@ -29,6 +28,8 @@ Item {
             Next {
                 id: nextBox
             }
+
+            Level {}
 
             Score {}
 

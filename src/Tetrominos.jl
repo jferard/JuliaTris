@@ -7,7 +7,8 @@ Tetrominos:
 module Tetrominos
 
 export Tetromino, get_color, TETROMINO_ROW_COUNT, TETROMINO_COL_COUNT, I_tetromino, O_tetromino,
-        T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino, random_tetromino
+        T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino, random_tetromino,
+        random_tetromino_or_empty
 
 using ..Colors
 import ..Colors: get_color
@@ -119,6 +120,9 @@ Z_tetromino = Tetromino(GREEN, [
      0 0 1 0],
 ])
 
-random_tetromino()::Tetromino = [I_tetromino, O_tetromino, T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino][rand(1:7)]
+TETROMINOS = [I_tetromino, O_tetromino, T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino]
+
+random_tetromino()::Tetromino = TETROMINOS[rand(1:7)]
+random_tetromino_or_empty()::Colored = vcat(TETROMINOS, [empty_square, empty_square])[rand(1:9)]
 
 end

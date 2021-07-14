@@ -52,16 +52,21 @@ const qmlfile = joinpath(dirname(Base.source_path()), "qml", "tetris.qml")
 const ROW_COUNT = 20
 const HIDDEN_ROW_COUNT = TETROMINO_ROW_COUNT - 1
 const COL_COUNT = 10
-const BASE_SPEED = 3 + 2 * 20
+const MAX_LEVEL = 20
+const SPEED_UP = 2
+const MAX_SPEED = 4 # actually, this is a min!
 const SIDE = 20
 
 BoardCell = Union{Empty, Wall, Tetromino, Marked}
 
-function create_empty_board()::GameBoard
-    return new_empty_board(ROW_COUNT+1, HIDDEN_ROW_COUNT, COL_COUNT+2) # let's add the walls
+function create_empty_board(height)::GameBoard
+    return new_empty_board(ROW_COUNT+1, HIDDEN_ROW_COUNT, COL_COUNT+2, height) # walls included
 end
 
 mutable struct Game
+    base_level::Int64
+    base_height::Int64
+    cur_level::Int64
     round::Int64
     speed::Int64
     board::GameBoard
@@ -73,20 +78,43 @@ mutable struct Game
     started::Bool
     over::Bool
 
-    function Game() # level, type of game, height
-        board = create_empty_board()
+    function Game(base_level, base_height) # type of game
+        board = create_empty_board(base_height)
         tetro_i = get_tetro_i(board)
         tetro_j = get_tetro_j(board)
         cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
         next_tetromino = random_tetromino()
-        return new(0, BASE_SPEED, board, cur_tetromino, next_tetromino, 0, 0, false, false, false)
+        speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - base_level)
+        return new(base_level, base_height, base_level, 0, speed, board, cur_tetromino, next_tetromino, 0, 0, false, false, false)
+    end
+end
+
+function updateGameMap!(game::Game)
+    global gameMap
+    gameMap["level"] = game.cur_level
+    gameMap["lines"] = game.lines_count
+    gameMap["score"] = game.score
+    gameMap["gameStarted"] = Int(game.started)
+    gameMap["gameOver"] = Int(game.over)
+    gameMap["next"] = get_next_tetromino(game)
+    gameMap["board"] = get_board(game)
+end
+
+function updateBestMap!(game::Game)
+    global bestMap
+    if game.lines_count > bestMap["linesCount"]
+        bestMap["linesCount"] = game.lines_count
+    end
+    if game.score > bestMap["score"]
+        bestMap["score"] = game.score
     end
 end
 
 function reset!(game::Game)
-    game.board = create_empty_board()
+    game.cur_level = game.base_level
+    game.board = create_empty_board(game.base_height)
     game.round = 0
-    game.speed = BASE_SPEED
+    game.speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - game.base_level)
     tetro_i = get_tetro_i(game.board)
     tetro_j = get_tetro_j(game.board)
     game.cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
@@ -96,8 +124,7 @@ function reset!(game::Game)
     game.marked = false
     game.started = true
     game.over = false
-    gameMap["gameStarted"] = 1
-    gameMap["gameOver"] = 0
+    updateGameMap!(game)
 end
 
 function next_tetromino!(game::Game)
@@ -110,8 +137,7 @@ function next_tetromino!(game::Game)
     else
         game.started = false
         game.over = true
-        gameMap["gameStarted"] = 0
-        gameMap["gameOver"] = 1
+        updateGameMap!(game)
     end
 end
 
@@ -143,18 +169,15 @@ function remove_lines!(game::Game)
     if lines_count >= 1
         game.lines_count += lines_count
         game.score += [1000, 4000, 16000, 64000][lines_count]
-        if game.lines_count % 10 == 0 && game.speed >= 3
-            game.speed -= 2
+        if game.lines_count % 10 == 0
+             lines_level = floor(Int64, game.lines_count // 10)
+             if game.cur_level < lines_level && lines_level <= MAX_LEVEL
+                game.speed -= SPEED_UP
+                game.cur_level += 1
+             end
         end
-        # update maps
-        gameMap["lines"] = game.lines_count
-        gameMap["score"] = string(game.score)
-        if game.lines_count > bestMap["linesCount"]
-            bestMap["linesCount"] = game.lines_count
-        end
-        if game.score > bestMap["score"]
-            bestMap["score"] = game.score
-        end
+        updateGameMap!(game)
+        updateBestMap!(game)
     end
 end
 
@@ -167,7 +190,7 @@ function fall!(game::Game)
             game.marked = true
         end
         next_tetromino!(game)
-        gameMap["next"] = get_next_tetromino()
+        updateGameMap!(game)
     end
 end
 
@@ -180,6 +203,7 @@ function key_press(key::Int32)
     if !game.started
         if key == KEY_SPACE
             reset!(game)
+            updateGameMap!(game)
         end
         return
     end
@@ -212,7 +236,7 @@ function update_game()
             fall!(game)
         end
     end
-    gameMap["board"] = get_board()
+    updateGameMap!(game)
 end
 
 function get_color(game::Game, cell_i, cell_j)::String
@@ -223,8 +247,7 @@ function get_color(game::Game, cell_i, cell_j)::String
     end
 end
 
-function get_board()::Vector{Vector{String}}
-    global game
+function get_board(game::Game)::Vector{Vector{String}}
     board = game.board
     color_rows = [[BLACK for _ in 1:board.col_count]
                    for _ in 1:board.row_count]
@@ -237,9 +260,7 @@ function get_board()::Vector{Vector{String}}
     return color_rows
 end
 
-function get_next_tetromino()::Vector{Vector{String}}
-    global game
-
+function get_next_tetromino(game::Game)::Vector{Vector{String}}
     arr = game.next_tetromino.arrays[1]
     color = game.next_tetromino.color
 
@@ -247,16 +268,15 @@ function get_next_tetromino()::Vector{Vector{String}}
 end
 
 game = nothing
-gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 1,
+gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 0,
                                "gameOver" => 0, "gameStarted" => 0, "board" => [],
                                "next" => []
                                )
 
-function init_game()
-    global game, gameMap
-    game = Game()
-    gameMap["board"] = get_board()
-    gameMap["next"] = get_next_tetromino()
+function init_game(game_type, level, height)
+    global game
+    game = Game(level, height)
+    updateGameMap!(game)
 end
 
 @qmlfunction init_game
