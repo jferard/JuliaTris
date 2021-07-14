@@ -73,7 +73,7 @@ mutable struct Game
     started::Bool
     over::Bool
 
-    function Game()
+    function Game() # level, type of game, height
         board = create_empty_board()
         tetro_i = get_tetro_i(board)
         tetro_j = get_tetro_j(board)
@@ -173,6 +173,10 @@ end
 
 function key_press(key::Int32)
     global game
+    if game == nothing
+        return
+    end
+
     if !game.started
         if key == KEY_SPACE
             reset!(game)
