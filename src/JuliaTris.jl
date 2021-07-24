@@ -59,13 +59,35 @@ const SIDE = 20
 
 BoardCell = Union{Empty, Wall, Tetromino, Marked}
 
+mutable struct Events
+    lines_completed::Int
+
+
+    function Events()
+        return new(0)
+    end
+end
+
+function reset(events::Events)
+   events.lines_completed = 0
+end
+
 function create_empty_board(height)::GameBoard
     return new_empty_board(ROW_COUNT+1, HIDDEN_ROW_COUNT, COL_COUNT+2, height) # walls included
 end
 
+@enum GameType begin
+    type_A = 1
+    type_B = 2
+end
+
+
 mutable struct Game
+    type::GameType
+    events::Events
     base_level::Int64
     base_height::Int64
+    base_lines_count::Int64
     cur_level::Int64
     round::Int64
     speed::Int64
@@ -77,33 +99,38 @@ mutable struct Game
     marked::Bool
     started::Bool
     over::Bool
-
-    function Game(base_level, base_height) # type of game
-        board = create_empty_board(base_height)
-        tetro_i = get_tetro_i(board)
-        tetro_j = get_tetro_j(board)
-        cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
-        next_tetromino = random_tetromino()
-        speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - base_level)
-        return new(base_level, base_height, base_level, 0, speed, board, cur_tetromino, next_tetromino, 0, 0, false, false, false)
-    end
 end
+
+game_A(base_level::Int32, base_height::Int32)::Game = Game(type_A, convert(Int64, base_level), convert(Int64, base_height), 0)
+
+game_B(base_level::Int32, base_height::Int32)::Game = Game(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+
+function Game(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)
+    events = Events()
+    board = create_empty_board(base_height)
+    tetro_i = get_tetro_i(board)
+    tetro_j = get_tetro_j(board)
+    cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
+    next_tetromino = random_tetromino()
+    speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - base_level)
+    return Game(type, events, base_level, base_height, base_lines_count, base_level, 0, speed, board, cur_tetromino,
+                next_tetromino, base_lines_count, 0, false, false, false)
+end
+
 
 function updateGameMap!(game::Game)
     global gameMap
     gameMap["level"] = game.cur_level
-    gameMap["lines"] = game.lines_count
+    gameMap["lines"] = game.base_lines_count
     gameMap["score"] = game.score
     gameMap["gameStarted"] = Int(game.started)
     gameMap["gameOver"] = Int(game.over)
-    gameMap["next"] = get_next_tetromino(game)
-    gameMap["board"] = get_board(game)
 end
 
 function updateBestMap!(game::Game)
     global bestMap
-    if game.lines_count > bestMap["linesCount"]
-        bestMap["linesCount"] = game.lines_count
+    if game.base_lines_count > bestMap["linesCount"]
+        bestMap["linesCount"] = game.base_lines_count
     end
     if game.score > bestMap["score"]
         bestMap["score"] = game.score
@@ -119,7 +146,7 @@ function reset!(game::Game)
     tetro_j = get_tetro_j(game.board)
     game.cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
     game.next_tetromino = random_tetromino()
-    game.lines_count = 0
+    game.base_lines_count = game.base_lines_count
     game.score = 0
     game.marked = false
     game.started = true
@@ -164,21 +191,10 @@ function move!(game::Game, delta_i::Int64, delta_j::Int64, delta_orientation::In
     end
 end
 
+SCORES = [40, 100, 300, 1000]
+
 function remove_lines!(game::Game)
-    lines_count = remove_lines!(game.board)
-    if lines_count >= 1
-        game.lines_count += lines_count
-        game.score += [1000, 4000, 16000, 64000][lines_count]
-        if game.lines_count % 10 == 0
-             lines_level = floor(Int64, game.lines_count // 10)
-             if game.cur_level < lines_level && lines_level <= MAX_LEVEL
-                game.speed -= SPEED_UP
-                game.cur_level += 1
-             end
-        end
-        updateGameMap!(game)
-        updateBestMap!(game)
-    end
+    game.events.lines_completed = remove_lines!(game.board)
 end
 
 function fall!(game::Game)
@@ -190,7 +206,7 @@ function fall!(game::Game)
             game.marked = true
         end
         next_tetromino!(game)
-        updateGameMap!(game)
+        updateGameBoard!(game)
     end
 end
 
@@ -203,7 +219,7 @@ function key_press(key::Int32)
     if !game.started
         if key == KEY_SPACE
             reset!(game)
-            updateGameMap!(game)
+            updateGameBoard!(game)
         end
         return
     end
@@ -222,8 +238,10 @@ function key_press(key::Int32)
     end
 end
 
-function update_game()
+function game_loop()
     global game
+    handle_events(game)
+
     if game.over
         return
     end
@@ -231,20 +249,62 @@ function update_game()
     if game.round >= game.speed
         if game.marked
             remove_lines!(game)
+            # TODO: check if the ground was reached or if the board is clean.
             game.marked = false
         else
             fall!(game)
         end
     end
     updateGameMap!(game)
+    updateGameBoard!(game)
 end
 
-function get_color(game::Game, cell_i, cell_j)::String
-    if is_tetromino_there(game.cur_tetromino, cell_i, cell_j)
-        return get_color(game.cur_tetromino)
-    else
-       return get_color(game.board, cell_i, cell_j)
+function handle_events(game::Game)
+    if game.type == type_A
+        handle_events_A(game, game.events)
+    elseif game.type == type_B
+        handle_events_B(game, game.events)
     end
+end
+
+function handle_events_A(game::Game, events::Events)
+    if events.lines_completed > 0
+        game.base_lines_count += events.lines_completed
+        game.score += SCORES[events.lines_completed]
+        if game.base_lines_count % 10 == 0
+             lines_level = floor(Int64, game.base_lines_count // 10)
+             if game.cur_level < lines_level && lines_level <= MAX_LEVEL
+                game.speed -= SPEED_UP
+                game.cur_level += 1
+             end
+        end
+        updateGameMap!(game)
+        updateBestMap!(game)
+    end
+    reset(events)
+end
+
+function handle_events_B(game::Game, events::Events)
+    if events.lines_completed > 0
+        game.base_lines_count -= events.lines_completed
+        game.score += SCORES[events.lines_completed]
+        if game.base_lines_count <= 0
+            game.base_lines_count == 0
+            game.over = true
+            # win
+        end
+        updateGameMap!(game)
+        updateBestMap!(game)
+    end
+    reset(events)
+end
+
+################
+# Update board #
+################
+function updateGameBoard!(game::Game)
+    gameMap["next"] = get_next_tetromino(game)
+    gameMap["board"] = get_board(game)
 end
 
 function get_board(game::Game)::Vector{Vector{String}}
@@ -267,20 +327,37 @@ function get_next_tetromino(game::Game)::Vector{Vector{String}}
     return [[arr[i, j] == 1 ? color : "black" for j in 1:TETROMINO_COL_COUNT] for i in 3:TETROMINO_ROW_COUNT]
 end
 
+function get_color(game::Game, cell_i, cell_j)::String
+    if is_tetromino_there(game.cur_tetromino, cell_i, cell_j)
+        return get_color(game.cur_tetromino)
+    else
+       return get_color(game.board, cell_i, cell_j)
+    end
+end
+
+
+########
+# INIT #
+########
+
 game = nothing
 gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 0,
                                "gameOver" => 0, "gameStarted" => 0, "board" => [],
                                "next" => []
                                )
 
-function init_game(game_type, level, height)
+function init_game(game_type, level::Int32, height::Int32)
     global game
-    game = Game(level, height)
+    if game_type == type_A
+        game = game_A(level, height)
+    else
+        game = game_B(level, height)
+    end
     updateGameMap!(game)
 end
 
 @qmlfunction init_game
-@qmlfunction update_game
+@qmlfunction game_loop
 @qmlfunction key_press
 
 bestMap = QML.JuliaPropertyMap("linesCount" => 0, "score" => 0)

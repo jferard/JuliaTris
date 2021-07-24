@@ -46,7 +46,7 @@ Item {
         repeat: true
         onTriggered: {
             if (game.gameStarted != 0) {
-                Julia.update_game()
+                Julia.game_loop()
             }
             tetrisCanvas.requestPaint();
             nextBox.update();
