@@ -82,12 +82,16 @@ end
 end
 
 
-mutable struct Game
+mutable struct GameModel
     type::GameType
+    level::Int64
+    height::Int64
+    lines_count::Int64
+end
+
+mutable struct Game
+    model::GameModel
     events::Events
-    base_level::Int64
-    base_height::Int64
-    base_lines_count::Int64
     cur_level::Int64
     round::Int64
     speed::Int64
@@ -106,22 +110,23 @@ game_A(base_level::Int32, base_height::Int32)::Game = Game(type_A, convert(Int64
 game_B(base_level::Int32, base_height::Int32)::Game = Game(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
 
 function Game(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)
+    model = GameModel(type, base_level, base_height, base_lines_count)
     events = Events()
-    board = create_empty_board(base_height)
+    board = create_empty_board(model.height)
     tetro_i = get_tetro_i(board)
     tetro_j = get_tetro_j(board)
     cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
     next_tetromino = random_tetromino()
     speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - base_level)
-    return Game(type, events, base_level, base_height, base_lines_count, base_level, 0, speed, board, cur_tetromino,
-                next_tetromino, base_lines_count, 0, false, false, false)
+    return Game(model, events, model.level, 0, speed, board, cur_tetromino,
+                next_tetromino, model.lines_count, 0, false, false, false)
 end
 
 
 function updateGameMap!(game::Game)
     global gameMap
     gameMap["level"] = game.cur_level
-    gameMap["lines"] = game.base_lines_count
+    gameMap["lines"] = game.lines_count
     gameMap["score"] = game.score
     gameMap["gameStarted"] = Int(game.started)
     gameMap["gameOver"] = Int(game.over)
@@ -129,8 +134,8 @@ end
 
 function updateBestMap!(game::Game)
     global bestMap
-    if game.base_lines_count > bestMap["linesCount"]
-        bestMap["linesCount"] = game.base_lines_count
+    if game.lines_count > bestMap["linesCount"]
+        bestMap["linesCount"] = game.lines_count
     end
     if game.score > bestMap["score"]
         bestMap["score"] = game.score
@@ -138,15 +143,15 @@ function updateBestMap!(game::Game)
 end
 
 function reset!(game::Game)
-    game.cur_level = game.base_level
-    game.board = create_empty_board(game.base_height)
+    game.cur_level = game.model.level
     game.round = 0
-    game.speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - game.base_level)
+    game.speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - game.cur_level)
+    game.board = create_empty_board(game.model.height)
     tetro_i = get_tetro_i(game.board)
     tetro_j = get_tetro_j(game.board)
     game.cur_tetromino = CurrentTetromino(tetro_i, tetro_j, random_tetromino(), 1)
     game.next_tetromino = random_tetromino()
-    game.base_lines_count = game.base_lines_count
+    game.lines_count = game.model.lines_count
     game.score = 0
     game.marked = false
     game.started = true
@@ -260,19 +265,19 @@ function game_loop()
 end
 
 function handle_events(game::Game)
-    if game.type == type_A
+    if game.model.type == type_A
         handle_events_A(game, game.events)
-    elseif game.type == type_B
+    elseif game.model.type == type_B
         handle_events_B(game, game.events)
     end
 end
 
 function handle_events_A(game::Game, events::Events)
     if events.lines_completed > 0
-        game.base_lines_count += events.lines_completed
+        game.lines_count += events.lines_completed
         game.score += SCORES[events.lines_completed]
-        if game.base_lines_count % 10 == 0
-             lines_level = floor(Int64, game.base_lines_count // 10)
+        if game.lines_count % 10 == 0
+             lines_level = floor(Int64, game.lines_count // 10)
              if game.cur_level < lines_level && lines_level <= MAX_LEVEL
                 game.speed -= SPEED_UP
                 game.cur_level += 1
@@ -286,10 +291,10 @@ end
 
 function handle_events_B(game::Game, events::Events)
     if events.lines_completed > 0
-        game.base_lines_count -= events.lines_completed
+        game.lines_count -= events.lines_completed
         game.score += SCORES[events.lines_completed]
-        if game.base_lines_count <= 0
-            game.base_lines_count == 0
+        if game.lines_count <= 0
+            game.lines_count == 0
             game.over = true
             # win
         end
