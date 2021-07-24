@@ -123,6 +123,11 @@ Z_tetromino = Tetromino(GREEN, [
 TETROMINOS = [I_tetromino, O_tetromino, T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino]
 
 random_tetromino()::Tetromino = TETROMINOS[rand(1:7)]
-random_tetromino_or_empty()::Colored = vcat(TETROMINOS, [empty_square, empty_square])[rand(1:9)]
+
+random_tetromino_or_empty()::Colored = if rand() < 0.5
+       empty_square
+    else
+       random_tetromino()
+    end
 
 end
