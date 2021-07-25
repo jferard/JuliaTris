@@ -141,4 +141,22 @@ function get_color(board::GameBoard, cell_i, cell_j)::String
     return get_color(get_square(board, cell_i, cell_j))
 end
 
+function is_not_empty_line(board::GameBoard, line_i::Int64)::Bool
+    for cell_j in 2:board.col_count-1
+        if get_square(board, line_i, cell_j) != empty_square
+            return true
+        end
+    end
+    return false
+end
+
+function get_height(board::GameBoard)::Int64
+    for line_i in 1:board.row_count - 1
+        if is_not_empty_line(board, line_i)
+            return board.row_count - line_i
+        end
+    end
+    return 0
+end
+
 end

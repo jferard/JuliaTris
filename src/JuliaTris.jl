@@ -35,7 +35,7 @@ using .CurrentTetrominos
 import .CurrentTetrominos: is_tetromino_there
 using .Board
 import .Board: position_allowed, merge_tetromino!, mark_lines!, remove_lines!, get_color,
-                get_tetro_i, get_tetro_j
+                get_tetro_i, get_tetro_j, get_height
 
 # from https://doc.qt.io/qt-5/qt.html#Key-enum
 const KEY_ESCAPE = 0x01000000
@@ -61,15 +61,16 @@ BoardCell = Union{Empty, Wall, Tetromino, Marked}
 
 mutable struct Events
     lines_completed::Int
-
+    target_height_reached::Bool
 
     function Events()
-        return new(0)
+        return new(0, false)
     end
 end
 
 function reset(events::Events)
    events.lines_completed = 0
+   events.target_height_reached = False
 end
 
 function create_empty_board(height)::GameBoard
@@ -81,12 +82,12 @@ end
     type_B = 2
 end
 
-
 mutable struct GameModel
     type::GameType
     level::Int64
     height::Int64
     lines_count::Int64
+    target_height::Int64
 end
 
 mutable struct Game
@@ -110,7 +111,7 @@ game_A(base_level::Int32, base_height::Int32)::Game = Game(type_A, convert(Int64
 game_B(base_level::Int32, base_height::Int32)::Game = Game(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
 
 function Game(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)
-    model = GameModel(type, base_level, base_height, base_lines_count)
+    model = GameModel(type, base_level, base_height, base_lines_count, -1)
     events = Events()
     board = create_empty_board(model.height)
     tetro_i = get_tetro_i(board)
@@ -204,7 +205,6 @@ end
 
 function fall!(game::Game)
     cur_tetromino = game.cur_tetromino
-    game.round = 0
     if !move!(game, 1, 0, 0)
         merge_tetromino!(game.board, game.cur_tetromino)
         if mark_lines!(game.board)
@@ -212,8 +212,15 @@ function fall!(game::Game)
         end
         next_tetromino!(game)
         updateGameBoard!(game)
+        check_height!(game)
     end
 end
+
+function check_height!(game::Game)
+    if get_height(game.board) <= game.model.target_height
+        game.events.target_height_reached = true
+    end
+end    
 
 function key_press(key::Int32)
     global game
@@ -256,9 +263,11 @@ function game_loop()
             remove_lines!(game)
             # TODO: check if the ground was reached or if the board is clean.
             game.marked = false
+            check_height!(game)
         else
             fall!(game)
         end
+        game.round = 0
     end
     updateGameMap!(game)
     updateGameBoard!(game)
