@@ -121,19 +121,57 @@ end
 
 abstract type Game end
 
-mutable struct Game0 <: Game
+mutable struct GameUnlimited <: Game
     model::GameModel
     state::GameState
 end
 
-game_A(base_level::Int32, base_height::Int32)::Game = Game0(type_A, convert(Int64, base_level), convert(Int64, base_height), 0)
+mutable struct Game25 <: Game
+    model::GameModel
+    state::GameState
+end
 
-game_B(base_level::Int32, base_height::Int32)::Game = Game0(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+mutable struct GameGround <: Game
+    model::GameModel
+    state::GameState
+end
 
-function Game0(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
+mutable struct GameCleaner <: Game
+    model::GameModel
+    state::GameState
+end
+
+game_unlimited(base_level::Int32, base_height::Int32)::Game = GameUnlimited(type_A, convert(Int64, base_level), convert(Int64, base_height), 0)
+
+game_25(base_level::Int32, base_height::Int32)::Game = Game25(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+
+game_ground(base_level::Int32, base_height::Int32)::Game = GameGround(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+
+game_cleaner(base_level::Int32, base_height::Int32)::Game = GameCleaner(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+
+
+function GameUnlimited(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
     model = GameModel(type, base_level, base_height, base_lines_count, -1)
     state = GameState(model)
-    return Game0(model, state)
+    return GameUnlimited(model, state)
+end
+
+function Game25(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
+    model = GameModel(type, base_level, base_height, base_lines_count, -1)
+    state = GameState(model)
+    return Game25(model, state)
+end
+
+function GameGround(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
+    model = GameModel(type, base_level, base_height, base_lines_count, -1)
+    state = GameState(model)
+    return GameGround(model, state)
+end
+
+function GameCleaner(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
+    model = GameModel(type, base_level, base_height, base_lines_count, 2)
+    state = GameState(model)
+    return GameCleaner(model, state)
 end
 
 
@@ -315,15 +353,10 @@ function game_loop()
     updateGameBoard!(state)
 end
 
-function handle_events(game::Game)
-    if game.model.type == type_A
-        handle_events_A(game.state, game.state.events)
-    elseif game.model.type == type_B
-        handle_events_B(game.state, game.state.events)
-    end
-end
+function handle_events(game::GameUnlimited)
+    state = game.state
+    events = game.state.events
 
-function handle_events_A(state::GameState, events::Events)
     if events.lines_completed > 0
         state.lines_count += events.lines_completed
         state.score += SCORES[events.lines_completed]
@@ -340,7 +373,46 @@ function handle_events_A(state::GameState, events::Events)
     reset(events)
 end
 
-function handle_events_B(state::GameState, events::Events)
+function handle_events(game::Game25)
+    state = game.state
+    events = game.state.events
+
+    if events.lines_completed > 0
+        state.lines_count -= events.lines_completed
+        state.score += SCORES[events.lines_completed]
+        if state.lines_count <= 0
+            state.lines_count == 0
+            state.over = true
+            # win
+        end
+        updateGameMap!(state)
+        updateBestMap!(state)
+    end
+    reset(events)
+end
+
+function handle_events(game::GameGround)
+    state = game.state
+    events = game.state.events
+
+    if events.lines_completed > 0
+        state.lines_count -= events.lines_completed
+        state.score += SCORES[events.lines_completed]
+        if state.lines_count <= 0
+            state.lines_count == 0
+            state.over = true
+            # win
+        end
+        updateGameMap!(state)
+        updateBestMap!(state)
+    end
+    reset(events)
+end
+
+function handle_events(game::GameCleaner)
+    state = game.state
+    events = game.state.events
+
     if events.lines_completed > 0
         state.lines_count -= events.lines_completed
         state.score += SCORES[events.lines_completed]
@@ -404,10 +476,18 @@ gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 0,
 
 function init_game(game_type, level::Int32, height::Int32)
     global game
-    if game_type == type_A
-        game = game_A(level, height)
+    if game_type == "unlimited"
+        game = game_unlimited(level, height)
+    elseif game_type == "25"
+        game = game_25(level, height)
+    elseif game_type == "ground"
+        game = game_ground(level, height)
+    elseif game_type == "cleaner"
+        game = game_cleaner(level, height)
+    elseif game_type == "classic"
+        game = game_unlimited(level, 0)
     else
-        game = game_B(level, height)
+        return
     end
     updateGameMap!(game.state)
 end
