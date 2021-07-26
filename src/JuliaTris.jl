@@ -80,13 +80,7 @@ function create_empty_board(height)::GameBoard
     return new_empty_board(ROW_COUNT+1, HIDDEN_ROW_COUNT, COL_COUNT+2, height) # walls included
 end
 
-@enum GameType begin
-    type_A = 1
-    type_B = 2
-end
-
 mutable struct GameModel
-    type::GameType
     level::Int64
     height::Int64
     lines_count::Int64
@@ -143,35 +137,35 @@ mutable struct GameCleaner <: Game
     state::GameState
 end
 
-game_unlimited(base_level::Int32, base_height::Int32)::Game = GameUnlimited(type_A, convert(Int64, base_level), convert(Int64, base_height), 0)
+game_unlimited(base_level::Int32, base_height::Int32)::Game = GameUnlimited(convert(Int64, base_level), convert(Int64, base_height), 0)
 
-game_25(base_level::Int32, base_height::Int32)::Game = Game25(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+game_25(base_level::Int32, base_height::Int32)::Game = Game25(convert(Int64, base_level), convert(Int64, base_height), 25)
 
-game_ground(base_level::Int32, base_height::Int32)::Game = GameGround(type_B, convert(Int64, base_level), convert(Int64, base_height), 0)
+game_ground(base_level::Int32, base_height::Int32)::Game = GameGround(convert(Int64, base_level), convert(Int64, base_height), 0)
 
-game_cleaner(base_level::Int32, base_height::Int32)::Game = GameCleaner(type_B, convert(Int64, base_level), convert(Int64, base_height), 0)
+game_cleaner(base_level::Int32, base_height::Int32)::Game = GameCleaner(convert(Int64, base_level), convert(Int64, base_height), 0)
 
 
-function GameUnlimited(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
-    model = GameModel(type, base_level, base_height, base_lines_count, -1)
+function GameUnlimited(base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
+    model = GameModel(base_level, base_height, base_lines_count, -1)
     state = GameState(model)
     return GameUnlimited(model, state)
 end
 
-function Game25(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
-    model = GameModel(type, base_level, base_height, base_lines_count, -1)
+function Game25(base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
+    model = GameModel(base_level, base_height, base_lines_count, -1)
     state = GameState(model)
     return Game25(model, state)
 end
 
-function GameGround(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
-    model = GameModel(type, base_level, base_height, base_lines_count, -1)
+function GameGround(base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
+    model = GameModel(base_level, base_height, base_lines_count, -1)
     state = GameState(model)
     return GameGround(model, state)
 end
 
-function GameCleaner(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
-    model = GameModel(type, base_level, base_height, base_lines_count, 2)
+function GameCleaner(base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
+    model = GameModel(base_level, base_height, base_lines_count, 2)
     state = GameState(model)
     return GameCleaner(model, state)
 end
