@@ -145,9 +145,9 @@ game_unlimited(base_level::Int32, base_height::Int32)::Game = GameUnlimited(type
 
 game_25(base_level::Int32, base_height::Int32)::Game = Game25(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
 
-game_ground(base_level::Int32, base_height::Int32)::Game = GameGround(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+game_ground(base_level::Int32, base_height::Int32)::Game = GameGround(type_B, convert(Int64, base_level), convert(Int64, base_height), 0)
 
-game_cleaner(base_level::Int32, base_height::Int32)::Game = GameCleaner(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+game_cleaner(base_level::Int32, base_height::Int32)::Game = GameCleaner(type_B, convert(Int64, base_level), convert(Int64, base_height), 0)
 
 
 function GameUnlimited(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
@@ -396,15 +396,15 @@ function handle_events(game::GameGround)
     events = game.state.events
 
     if events.lines_completed > 0
-        state.lines_count -= events.lines_completed
+        state.lines_count += events.lines_completed
         state.score += SCORES[events.lines_completed]
-        if state.lines_count <= 0
-            state.lines_count == 0
-            state.over = true
-            # win
-        end
         updateGameMap!(state)
         updateBestMap!(state)
+    end
+    if events.ground_touched
+        state.over = true
+        println("WIN!")
+        # win
     end
     reset(events)
 end
@@ -416,13 +416,13 @@ function handle_events(game::GameCleaner)
     if events.lines_completed > 0
         state.lines_count -= events.lines_completed
         state.score += SCORES[events.lines_completed]
-        if state.lines_count <= 0
-            state.lines_count == 0
-            state.over = true
-            # win
-        end
         updateGameMap!(state)
         updateBestMap!(state)
+    end
+    if events.target_height_reached
+        state.over = true
+        println("WIN!")
+        # win
     end
     reset(events)
 end
