@@ -62,15 +62,17 @@ BoardCell = Union{Empty, Wall, Tetromino, Marked}
 mutable struct Events
     lines_completed::Int
     target_height_reached::Bool
+    ground_touched::Bool
 
     function Events()
-        return new(0, false)
+        return new(0, false, false)
     end
 end
 
 function reset(events::Events)
    events.lines_completed = 0
-   events.target_height_reached = False
+   events.target_height_reached = false
+   events.ground_touched = false
 end
 
 function create_empty_board(height)::GameBoard
@@ -210,9 +212,10 @@ function fall!(game::Game)
         if mark_lines!(game.board)
             game.marked = true
         end
+        check_height!(game)
+        check_ground!(game)
         next_tetromino!(game)
         updateGameBoard!(game)
-        check_height!(game)
     end
 end
 
@@ -221,6 +224,28 @@ function check_height!(game::Game)
         game.events.target_height_reached = true
     end
 end    
+
+function check_ground!(game::Game)
+    if ground_touched(game.board, game.cur_tetromino)
+        game.events.ground_touched = true
+    end
+end
+
+function ground_touched(board::GameBoard, cur_tetromino::CurrentTetromino)::Bool
+    arr = cur_tetromino.tetromino.arrays[cur_tetromino.orientation]
+    tetro_i = cur_tetromino.i
+    for k in 1:TETROMINO_ROW_COUNT
+        for l in 1:TETROMINO_COL_COUNT
+            if arr[k, l] == 1
+                cell_i = tetro_i + k - 1 # caveat here
+                if cell_i == board.row_count - 1
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
 
 function key_press(key::Int32)
     global game
