@@ -84,16 +84,25 @@ Item {
         running: true
         repeat: true
         onTriggered: {
-            if (game.gameStarted == 0) {
-                showInformation()
-                return
-            } else if (game.gamePaused != 0) {
-                showInformation()
-            } else {
+            if (game.gamePaused == 1) {
+                if (game.gameLost == 1) {
+                    information.text = "GAME OVER\nPress space"
+                    showInformation()
+                    return;
+                }
+                if (game.gameWon == 1) {
+                    information.text = "Congratulations\nPress space"
+                    showInformation()
+                    return;
+                } else if (game.gameStarted == 1) {
+                    information.text = "Pause\nPress space"
+                    showInformation()
+                }
+            } else if (game.gameStarted == 1) {
                 showGame()
+                Julia.game_loop()
             }
 
-            Julia.game_loop()
             tetrisCanvas.requestPaint();
             nextBox.update();
          }

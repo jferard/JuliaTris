@@ -8,7 +8,7 @@ module Tetrominos
 
 export Tetromino, get_color, TETROMINO_ROW_COUNT, TETROMINO_COL_COUNT, I_tetromino, O_tetromino,
         T_tetromino, J_tetromino, L_tetromino, S_tetromino, Z_tetromino, random_tetromino,
-        random_tetromino_or_empty
+        random_tetromino_or_empty, get_tetromino_map, get_random_tetromino_map
 
 using ..Colors
 import ..Colors: get_color
@@ -131,5 +131,16 @@ random_tetromino_or_empty()::Colored = if rand() < 0.5
     end
 
 fixed_color(i, j) = TETROMINOS[((i-1)*TETROMINO_COL_COUNT+(j-1)) % 7 + 1].color
+
+function get_tetromino_map(next_tetromino::Tetromino)::Vector{Vector{String}}
+    arr = next_tetromino.arrays[1]
+    color = next_tetromino.color
+
+    return [[arr[i, j] == 1 ? color : "black" for j in 1:TETROMINO_COL_COUNT] for i in 3:TETROMINO_ROW_COUNT]
+end
+
+function get_random_tetromino_map()::Vector{Vector{String}}
+    return [[fixed_color(i, j) for j in 1:TETROMINO_COL_COUNT] for i in 3:TETROMINO_ROW_COUNT]
+end
 
 end
