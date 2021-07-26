@@ -31,6 +31,7 @@ include("Board.jl")
 using .Colors
 import .Colors: get_color
 using .Tetrominos
+import .Tetrominos: fixed_color
 using .CurrentTetrominos
 import .CurrentTetrominos: is_tetromino_there
 using .Board
@@ -345,6 +346,7 @@ function game_loop()
 
     state = game.state
     if state.over || state.paused
+        updateGameBoard!(state)
         return
     end
     state.round += 1
@@ -441,8 +443,30 @@ end
 # Update board #
 ################
 function updateGameBoard!(state::GameState)
-    gameMap["board"] = get_board_map(state)
-    gameMap["next"] = get_tetromino_map(state.next_tetromino)
+    if state.paused
+        gameMap["board"] = get_random_board_map(state)
+        gameMap["next"] = get_random_tetromino_map()
+    else
+        gameMap["board"] = get_board_map(state)
+        gameMap["next"] = get_tetromino_map(state.next_tetromino)
+    end
+end
+
+function get_random_board_map(state::GameState)::Vector{Vector{String}}
+    row_count = state.board.row_count
+    col_count = state.board.col_count
+    color_rows = [[BLACK for _ in 1:col_count] for _ in 1:row_count]
+    for cell_i in 1:row_count
+        for cell_j in 1:col_count
+            color = fixed_color(cell_i, cell_j)
+            color_rows[cell_i][cell_j] = color
+        end
+    end
+    return color_rows
+end
+
+function get_random_tetromino_map()::Vector{Vector{String}}
+    return [[fixed_color(i, j) for j in 1:TETROMINO_COL_COUNT] for i in 3:TETROMINO_ROW_COUNT]
 end
 
 function get_board_map(state::GameState)::Vector{Vector{String}}

@@ -130,4 +130,6 @@ random_tetromino_or_empty()::Colored = if rand() < 0.5
        random_tetromino()
     end
 
+fixed_color(i, j) = TETROMINOS[((i-1)*TETROMINO_COL_COUNT+(j-1)) % 7 + 1].color
+
 end
