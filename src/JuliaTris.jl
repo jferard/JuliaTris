@@ -20,7 +20,7 @@
 ENV["QSG_RENDER_LOOP"] = "basic"
 
 using QML
-using Qt5QuickControls_jll
+using Qt5QuickControls2_jll
 using JSON
 
 include("Colors.jl")
@@ -69,7 +69,7 @@ mutable struct Events
     end
 end
 
-function reset(events::Events)
+function reset!(events::Events)
    events.lines_completed = 0
    events.target_height_reached = false
    events.ground_touched = false
@@ -104,6 +104,7 @@ mutable struct GameState
     score::Int64
     marked::Bool
     started::Bool
+    paused::Bool
     over::Bool
 end
 
@@ -116,7 +117,7 @@ function GameState(model::GameModel)
     next_tetromino = random_tetromino()
     speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - model.level)
     state = GameState(events, model.level, 0, speed, board, cur_tetromino,
-                next_tetromino, model.lines_count, 0, false, false, false)
+                next_tetromino, model.lines_count, 0, false, false, false, false)
 end
 
 abstract type Game end
@@ -181,6 +182,7 @@ function updateGameMap!(state::GameState)
     gameMap["lines"] = state.lines_count
     gameMap["score"] = state.score
     gameMap["gameStarted"] = Int(state.started)
+    gameMap["gamePaused"] = Int(state.paused)
     gameMap["gameOver"] = Int(state.over)
 end
 
@@ -211,6 +213,7 @@ function reset!(state::GameState, model::GameModel)
     state.score = 0
     state.marked = false
     state.started = true
+    state.paused = false
     state.over = false
     updateGameMap!(state)
 end
@@ -307,11 +310,18 @@ function key_press(key::Int32)
     end
     state = game.state
 
-    if !state.started
-        if key == KEY_SPACE
+    if key == KEY_SPACE
+        if !state.started
             reset!(game)
             updateGameBoard!(state)
+            updateGameMap!(state)
+        else
+            state.paused = !state.paused
+            updateGameMap!(state)
         end
+    end
+
+    if !state.started || state.paused
         return
     end
 
@@ -334,7 +344,7 @@ function game_loop()
     handle_events(game)
 
     state = game.state
-    if state.over
+    if state.over || state.paused
         return
     end
     state.round += 1
@@ -370,7 +380,7 @@ function handle_events(game::GameUnlimited)
         updateGameMap!(state)
         updateBestMap!(state)
     end
-    reset(events)
+    reset!(events)
 end
 
 function handle_events(game::Game25)
@@ -388,7 +398,7 @@ function handle_events(game::Game25)
         updateGameMap!(state)
         updateBestMap!(state)
     end
-    reset(events)
+    reset!(events)
 end
 
 function handle_events(game::GameGround)
@@ -406,7 +416,7 @@ function handle_events(game::GameGround)
         println("WIN!")
         # win
     end
-    reset(events)
+    reset!(events)
 end
 
 function handle_events(game::GameCleaner)
@@ -424,7 +434,7 @@ function handle_events(game::GameCleaner)
         println("WIN!")
         # win
     end
-    reset(events)
+    reset!(events)
 end
 
 ################
@@ -470,7 +480,7 @@ end
 
 game = nothing
 gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 0,
-                               "gameOver" => 0, "gameStarted" => 0, "board" => [],
+                               "gameOver" => 0, "gameStarted" => 0, "gamePaused" => 0, "board" => [],
                                "next" => []
                                )
 

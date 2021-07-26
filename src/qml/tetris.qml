@@ -19,7 +19,7 @@
 */
 import QtQuick 2.0
 import QtQuick.Window 2.0
-import QtQuick.Controls 1.0
+import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.0
 import org.julialang 1.0
 
@@ -60,6 +60,39 @@ ApplicationWindow {
         Keys.onPressed: {
             Julia.key_press(event.key)
             event.accepted = true;
+        }
+
+        pushEnter: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 0
+                to:1
+                duration: 200
+            }
+        }
+        pushExit: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 1
+                to:0
+                duration: 200
+            }
+        }
+        popEnter: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 0
+                to:1
+                duration: 200
+            }
+        }
+        popExit: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 1
+                to:0
+                duration: 200
+            }
         }
     }
 

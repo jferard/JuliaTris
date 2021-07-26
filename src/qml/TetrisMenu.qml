@@ -1,6 +1,6 @@
 import QtQuick 2.0
 import QtQuick.Window 2.0
-import QtQuick.Controls 1.0
+import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.0
 
 Item {
@@ -76,10 +76,10 @@ Item {
 
             Slider {
                 id: level
-                minimumValue : 0
-                maximumValue : 19
+                from : 0
+                to : 19
                 stepSize : 1
-                tickmarksEnabled : true
+                // tickmarksEnabled : true
                 value: 0
             }
 
@@ -102,10 +102,10 @@ Item {
 
             Slider {
                 id: height
-                minimumValue : 0
-                maximumValue : 14
+                from : 0
+                to : 14
                 stepSize : 1
-                tickmarksEnabled : true
+                // tickmarksEnabled : true
                 value: 0
             }
 
