@@ -38,7 +38,7 @@ using .Board
 import .Board: position_allowed, merge_tetromino!, mark_lines!, remove_lines!, get_color,
                 get_tetro_i, get_tetro_j, get_height
 using .BoardStates
-import .BoardStates: next_tetromino!, move!, get_board_map, get_random_board_map
+import .BoardStates: move!, get_board_map, get_random_board_map
 
 # from https://doc.qt.io/qt-5/qt.html#Key-enum
 const KEY_ESCAPE = 0x01000000
@@ -191,7 +191,7 @@ function fall!(game::Game)
         end
         check_height!(game)
         check_ground!(game)
-        next_tetromino!(board_state)
+        next_tetromino!(game)
         update_game_board!(game)
     end
 end
@@ -223,6 +223,22 @@ function ground_touched(board::GameBoard, cur_tetromino::CurrentTetromino)::Bool
     end
     return false
 end
+
+function next_tetromino!(game::Game)
+    board_state = game.board_state
+    tetromino = board_state.next_tetromino
+    tetro_i = get_tetro_i(board_state.board)
+    tetro_j = get_tetro_j(board_state.board)
+    if position_allowed(board_state.board, tetromino, tetro_i, tetro_j, 1)
+        board_state.cur_tetromino = CurrentTetromino(tetro_i, tetro_j, tetromino, 1)
+        board_state.next_tetromino = random_tetromino()
+    else
+        game.state.lost = true
+        game.state.paused = true
+        update_game_map!(game)
+    end
+end
+
 
 function key_press(key::Int32)
     global game

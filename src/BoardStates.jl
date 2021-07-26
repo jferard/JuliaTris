@@ -6,11 +6,14 @@ BoardState:
 =#
 module BoardStates
 
-export GameModel, BoardState, new_board_state, next_tetromino!, move!, get_board_map,
+export GameModel, BoardState, new_board_state, move!, get_board_map,
         get_random_board_map
 
+using ..Colors
 using ..Board
+import ..Board: get_color
 using ..Tetrominos
+import ..Tetrominos: fixed_color
 using ..CurrentTetrominos
 
 const MAX_LEVEL = 20
@@ -52,20 +55,6 @@ function new_board_state(model::GameModel)::BoardState
     speed = MAX_SPEED +  SPEED_UP * (MAX_LEVEL - model.level)
     state = BoardState(model.level, 0, speed, board, cur_tetromino,
                 next_tetromino, model.lines_count, 0, false)
-end
-
-function next_tetromino!(board_state::BoardState)
-    tetromino = board_state.next_tetromino
-    tetro_i = get_tetro_i(board_state.board)
-    tetro_j = get_tetro_j(board_state.board)
-    if position_allowed(board_state.board, tetromino, tetro_i, tetro_j, 1)
-        board_state.cur_tetromino = CurrentTetromino(tetro_i, tetro_j, tetromino, 1)
-        board_state.next_tetromino = random_tetromino()
-    else
-        board_state.lost = true
-        board_state.paused = true
-        update_game_map!(game)
-    end
 end
 
 function move!(board_state::BoardState, delta_i::Int64, delta_j::Int64, delta_orientation::Int64)::Bool
