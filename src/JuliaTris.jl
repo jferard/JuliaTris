@@ -119,19 +119,21 @@ function GameState(model::GameModel)
                 next_tetromino, model.lines_count, 0, false, false, false)
 end
 
-mutable struct Game
+abstract type Game end
+
+mutable struct Game0 <: Game
     model::GameModel
     state::GameState
 end
 
-game_A(base_level::Int32, base_height::Int32)::Game = Game(type_A, convert(Int64, base_level), convert(Int64, base_height), 0)
+game_A(base_level::Int32, base_height::Int32)::Game = Game0(type_A, convert(Int64, base_level), convert(Int64, base_height), 0)
 
-game_B(base_level::Int32, base_height::Int32)::Game = Game(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
+game_B(base_level::Int32, base_height::Int32)::Game = Game0(type_B, convert(Int64, base_level), convert(Int64, base_height), 25)
 
-function Game(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)
+function Game0(type::GameType, base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
     model = GameModel(type, base_level, base_height, base_lines_count, -1)
     state = GameState(model)
-    return Game(model, state)
+    return Game0(model, state)
 end
 
 
