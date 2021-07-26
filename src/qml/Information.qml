@@ -4,8 +4,10 @@ import org.julialang 1.0
 
 Item {
     width: 12*TILE_SIZE; height: 21*TILE_SIZE
+    property alias text: informationLabel.text
 
     Label {
+        id: informationLabel
         anchors.centerIn: parent
 
          background: Rectangle {
