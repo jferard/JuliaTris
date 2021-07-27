@@ -370,7 +370,7 @@ function handle_events(game::GameCleaner)
 
     if events.lines_completed > 0
         board_state = game.board_state
-        board_state.lines_count -= events.lines_completed
+        board_state.lines_count += events.lines_completed
         board_state.score += SCORES[events.lines_completed]
         update_game_map!(game)
         update_best_map!(board_state)
@@ -387,7 +387,7 @@ end
 # Update board #
 ################
 function update_game_board!(game::Game)
-    if game.state.paused
+    if game.state.paused && !(game.state.won || game.state.lost)
         gameMap["board"] = get_random_board_map(game.board_state)
         gameMap["next"] = get_random_tetromino_map()
     else

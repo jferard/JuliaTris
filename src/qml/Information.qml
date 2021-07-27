@@ -13,7 +13,7 @@ Item {
          background: Rectangle {
             anchors.centerIn: parent
             radius: 20
-            color: "black"
+            color: "#1e1b18"
             width: parent.width * 1.1
             height: parent.height * 3
 
