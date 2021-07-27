@@ -49,6 +49,7 @@ const KEY_DOWN = 0x01000015
 const KEY_SPACE = 0x20
 const KEY_B = 0x42
 const KEY_N = 0x4e
+const KEY_ESCAPE = 0x01000000
 
 const qmlfile = joinpath(dirname(Base.source_path()), "qml", "tetris.qml")
 

@@ -22,4 +22,20 @@ Item {
         color: "white"
         text: "Press space"
     }
+
+    Label {
+         id: escLabel
+
+         background: Rectangle {
+            anchors.centerIn: parent
+            radius: 20
+            color: "#1e1b18"
+            width: parent.width * 1.1
+            height: parent.height * 1.2
+
+        }
+        font.pointSize: 12
+        color: "white"
+        text: "Quit: press ESC"
+    }
 }
