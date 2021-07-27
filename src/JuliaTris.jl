@@ -49,7 +49,6 @@ const KEY_DOWN = 0x01000015
 const KEY_SPACE = 0x20
 const KEY_B = 0x42
 const KEY_N = 0x4e
-const KEY_ESCAPE = 0x01000000
 
 const qmlfile = joinpath(dirname(Base.source_path()), "qml", "tetris.qml")
 
@@ -79,9 +78,10 @@ mutable struct GameState
     paused::Bool
     lost::Bool
     won::Bool
+    restart::Bool
 end
 
-new_game_state() = GameState(Events(), false, true, false, false)
+new_game_state() = GameState(Events(), false, true, false, false, false)
 
 abstract type Game end
 
@@ -163,6 +163,7 @@ function update_game_map!(game::Game)
     gameMap["gamePaused"] = Int(game.state.paused)
     gameMap["gameLost"] = Int(game.state.lost)
     gameMap["gameWon"] = Int(game.state.won)
+    gameMap["gameRestart"] = Int(game.state.restart)
 end
 
 function update_best_map!(board_state::BoardState)
@@ -248,6 +249,18 @@ function key_press(key::Int32)
     end
     state = game.state
     board_state = game.board_state
+
+    if key == KEY_ESCAPE
+        if state.paused
+            state.restart = true
+            update_game_map!(game)
+            return
+        else
+            state.paused = true
+            update_game_board!(game)
+            update_game_map!(game)
+        end
+    end
 
     if key == KEY_SPACE
         if !state.started
@@ -403,8 +416,8 @@ end
 
 game = nothing
 gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 0,
-                               "gameLost" => 0, "gameStarted" => 0, "gamePaused" => 0,
-                               "gameWon" => 0, "board" => [], "next" => []
+                               "gameLost" => 0, "gameStarted" => 0, "gameRestart" => 0,
+                                "gamePaused" => 0, "gameWon" => 0, "board" => [], "next" => []
                                )
 
 function init_game(game_type, level::Int32, height::Int32)
@@ -440,7 +453,7 @@ catch e
     println(e)
 end
 
-loadqml(qmlfile, game=gameMap, TILE_SIZE=20, best=best_map)
+loadqml(qmlfile, game = gameMap, TILE_SIZE = 20, best = best_map)
 exec()
 
 open("juliatris.json", "w") do dest

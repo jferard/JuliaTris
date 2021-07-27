@@ -85,7 +85,10 @@ Item {
         repeat: true
         onTriggered: {
             if (game.gamePaused == 1) {
-                if (game.gameLost == 1) {
+                if (game.gameRestart == 1) {
+                    stack.pop()
+                    return;
+                } if (game.gameLost == 1) {
                     information.text = "GAME OVER\nPress space"
                     showInformation()
                     return;
