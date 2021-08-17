@@ -85,6 +85,8 @@ Item {
         repeat: true
         onTriggered: {
             if (game.gamePaused == 1) {
+                // game.bestScore => stack.push()
+                // game.bestScoreSeen => stack.pop() twice
                 if (game.gameRestart == 1) {
                     stack.pop()
                     return;

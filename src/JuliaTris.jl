@@ -109,38 +109,29 @@ mutable struct GameCleaner <: Game
     state::GameState
 end
 
-game_unlimited(base_level::Int32, base_height::Int32)::Game = GameUnlimited(convert(Int64, base_level), convert(Int64, base_height), 0)
-
-game_25(base_level::Int32, base_height::Int32)::Game = Game25(convert(Int64, base_level), convert(Int64, base_height), 25)
-
-game_ground(base_level::Int32, base_height::Int32)::Game = GameGround(convert(Int64, base_level), convert(Int64, base_height), 0)
-
-game_cleaner(base_level::Int32, base_height::Int32)::Game = GameCleaner(convert(Int64, base_level), convert(Int64, base_height), 0)
-
-
-function GameUnlimited(base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
-    model = GameModel(base_level, base_height, base_lines_count, -1)
+function game_unlimited(base_level::Int32, base_height::Int32, best::Any)::Game
+    model = GameModel(base_level, base_height, 0, -1)
     board_state = new_board_state(model)
     state = new_game_state()
     return GameUnlimited(model, board_state, state)
 end
 
-function Game25(base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
-    model = GameModel(base_level, base_height, base_lines_count, -1)
+function game_25(base_level::Int32, base_height::Int32, best::Any)::Game
+    model = GameModel(base_level, base_height, 25, -1)
     board_state = new_board_state(model)
     state = new_game_state()
     return Game25(model, board_state, state)
 end
 
-function GameGround(base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
-    model = GameModel(base_level, base_height, base_lines_count, -1)
+function game_ground(base_level::Int32, base_height::Int32, best::Any)::Game
+    model = GameModel(base_level, base_height, 0, -1)
     board_state = new_board_state(model)
     state = new_game_state()
     return GameGround(model, board_state, state)
 end
 
-function GameCleaner(base_level::Int64, base_height::Int64, base_lines_count::Int64)::Game
-    model = GameModel(base_level, base_height, base_lines_count, 2)
+function game_cleaner(base_level::Int32, base_height::Int32, best::Any)::Game
+    model = GameModel(base_level, base_height, 0, 1)
     board_state = new_board_state(model)
     state = new_game_state()
     return GameCleaner(model, board_state, state)
@@ -155,19 +146,20 @@ end
 
 ####################################################
 function update_game_map!(game::Game)
-    global gameMap
-    gameMap["level"] = game.board_state.cur_level
-    gameMap["lines"] = game.board_state.lines_count
-    gameMap["score"] = game.board_state.score
-    gameMap["gameStarted"] = Int(game.state.started)
-    gameMap["gamePaused"] = Int(game.state.paused)
-    gameMap["gameLost"] = Int(game.state.lost)
-    gameMap["gameWon"] = Int(game.state.won)
-    gameMap["gameRestart"] = Int(game.state.restart)
+    global game_map
+    game_map["level"] = game.board_state.cur_level
+    game_map["lines"] = game.board_state.lines_count
+    game_map["score"] = game.board_state.score
+    game_map["gameStarted"] = Int(game.state.started)
+    game_map["gamePaused"] = Int(game.state.paused)
+    game_map["gameLost"] = Int(game.state.lost)
+    game_map["gameWon"] = Int(game.state.won)
+    game_map["gameRestart"] = Int(game.state.restart)
 end
 
-function update_best_map!(board_state::BoardState)
+function update_best_map!(game::Game)
     global best_map
+    board_state = game.board_state
     if board_state.lines_count > best_map["linesCount"]
         best_map["linesCount"] = board_state.lines_count
     end
@@ -175,6 +167,56 @@ function update_best_map!(board_state::BoardState)
         best_map["score"] = board_state.score
     end
 end
+
+function update_best_map!(game::GameUnlimited)
+    global best_map
+    board_state = game.board_state
+    if board_state.lines_count > best_map["linesCount"]
+        best_map["linesCount"] = board_state.lines_count
+    end
+    if board_state.score > best_map["score"]
+        best_map["score"] = board_state.score
+    end
+end
+
+function update_best_map!(game::Game25)
+    global best_map
+    board_state = game.board_state
+    if board_state.score > best_map["score"]
+        best_map["score"] = board_state.score
+    end
+end
+
+function update_best_map!(game::GameGround)
+    global best_map
+    board_state = game.board_state
+    if board_state.score > best_map["score"]
+        best_map["score"] = board_state.score
+    end
+end
+
+function update_best_map!(game::GameCleaner)
+    global best_map
+    board_state = game.board_state
+    if board_state.score > best_map["score"]
+        best_map["score"] = board_state.score
+    end
+end
+
+"""
+Update the best scores as JSON object.
+"""
+function update_best!(game::Game)
+    global best
+    board_state = game.board_state
+    bestLinesCounts = best["unlimited"]["linesCount"]
+    if board_state.lines_count > bestLinesCounts[1]
+        # sort(vcat(bestLinesCounts, board_state.lines_count))[1:end-1]
+        # gameMap["bestScore"]
+        # gameMap["message"] = "bestScore" / "restart"
+    end
+end
+
 ################################################################
 
 SCORES = [40, 100, 300, 1000]
@@ -237,6 +279,7 @@ function next_tetromino!(game::Game)
     else
         game.state.lost = true
         game.state.paused = true
+        update_best!(game)
         update_game_map!(game)
     end
 end
@@ -335,7 +378,7 @@ function handle_events(game::GameUnlimited)
              end
         end
         update_game_map!(game)
-        update_best_map!(board_state)
+        update_best_map!(game)
     end
     reset!(events)
 end
@@ -352,9 +395,10 @@ function handle_events(game::Game25)
             board_state.lines_count == 0
             state.won = true
             state.paused = true
+            update_best!(game)
         end
         update_game_map!(game)
-        update_best_map!(board_state)
+        update_best_map!(game)
     end
     reset!(events)
 end
@@ -368,11 +412,12 @@ function handle_events(game::GameGround)
         board_state.lines_count += events.lines_completed
         board_state.score += SCORES[events.lines_completed]
         update_game_map!(game)
-        update_best_map!(board_state)
+        update_best_map!(game)
     end
     if events.ground_touched
         state.won = true
         state.paused = true
+        update_best!(game)
         update_game_map!(game)
     end
     reset!(events)
@@ -387,11 +432,12 @@ function handle_events(game::GameCleaner)
         board_state.lines_count += events.lines_completed
         board_state.score += SCORES[events.lines_completed]
         update_game_map!(game)
-        update_best_map!(board_state)
+        update_best_map!(game)
     end
     if events.target_height_reached
         state.won = true
         state.paused = true
+        update_best!(game)
         update_game_map!(game)
     end
     reset!(events)
@@ -402,11 +448,11 @@ end
 ################
 function update_game_board!(game::Game)
     if game.state.paused && !(game.state.won || game.state.lost)
-        gameMap["board"] = get_random_board_map(game.board_state)
-        gameMap["next"] = get_random_tetromino_map()
+        game_map["board"] = get_random_board_map(game.board_state)
+        game_map["next"] = get_random_tetromino_map()
     else
-        gameMap["board"] = get_board_map(game.board_state)
-        gameMap["next"] = get_tetromino_map(game.board_state.next_tetromino)
+        game_map["board"] = get_board_map(game.board_state)
+        game_map["next"] = get_tetromino_map(game.board_state.next_tetromino)
     end
 end
 
@@ -415,23 +461,28 @@ end
 ########
 
 game = nothing
-gameMap = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 0,
+game_map = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 0,
                                "gameLost" => 0, "gameStarted" => 0, "gameRestart" => 0,
                                 "gamePaused" => 0, "gameWon" => 0, "board" => [], "next" => []
                                )
 
+best = nothing
+best_map = QML.JuliaPropertyMap("linesCount" => 0, "score" => 0)
+
+
 function init_game(game_type, level::Int32, height::Int32)
-    global game
+    global game, best
+    println(best)
     if game_type == "unlimited"
-        game = game_unlimited(level, height)
+        game = game_unlimited(level, height, best["unlimited"])
     elseif game_type == "25"
-        game = game_25(level, height)
+        game = game_25(level, height, best["25"])
     elseif game_type == "ground"
-        game = game_ground(level, height)
+        game = game_ground(level, height, best["ground"])
     elseif game_type == "cleaner"
-        game = game_cleaner(level, height)
+        game = game_cleaner(level, height, best["cleaner"])
     elseif game_type == "classic"
-        game = game_unlimited(level, 0)
+        game = game_unlimited(level, 0, best["unlimited"])
     else
         return
     end
@@ -442,20 +493,18 @@ end
 @qmlfunction game_loop
 @qmlfunction key_press
 
-best_map = QML.JuliaPropertyMap("linesCount" => 0, "score" => 0)
 try
     open("juliatris.json", "r") do source
-        global best_map
+        global best
         best = JSON.parse(source)
-        best_map = QML.JuliaPropertyMap(best)
     end
 catch e
     println(e)
 end
 
-loadqml(qmlfile, game = gameMap, TILE_SIZE = 20, best = best_map)
+loadqml(qmlfile, game = game_map, TILE_SIZE = 20, best = best_map)
 exec()
 
 open("juliatris.json", "w") do dest
-    JSON.print(dest, best_map)
+    JSON.print(dest, best)
 end
