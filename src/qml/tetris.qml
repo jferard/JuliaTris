@@ -45,10 +45,16 @@ ApplicationWindow {
     }
 
     function drawSquare(ctx, startY, startX, i, j, squareColor) {
-        ctx.fillStyle = squareColor
         if (squareColor == "black") {
+            ctx.fillStyle = squareColor
             ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
         } else {
+            if (squareColor == "rainbow") {
+                var s = Math.floor(Date.now() / 100) % 7
+                ctx.fillStyle = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"][s]
+            } else {
+                ctx.fillStyle = squareColor
+            }
             ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE-1, TILE_SIZE-1)
         }
     }

@@ -38,7 +38,7 @@ using .Board
 import .Board: position_allowed, merge_tetromino!, mark_lines!, remove_lines!, get_color,
                 get_tetro_i, get_tetro_j, get_height
 using .BoardStates
-import .BoardStates: move!, get_board_map, get_random_board_map
+import .BoardStates: move!, get_board_map, get_random_board_map, MAX_LEVEL
 
 # from https://doc.qt.io/qt-5/qt.html#Key-enum
 const KEY_ESCAPE = 0x01000000

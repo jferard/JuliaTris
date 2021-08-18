@@ -19,6 +19,7 @@ const AQUA = "aqua"
 const YELLOW = "yellow"
 const MAGENTA = "magenta"
 const ORANGE = "orange"
+const RAINBOW = "rainbow"
 
 abstract type Colored end
 function get_color(c::Colored)::String end
@@ -32,11 +33,7 @@ get_color(e::Empty)::String = BLACK
 round = 0
 
 struct Marked <: Colored end
-function get_color(m::Marked)::String
-    global round
-    round += 1
-    return [RED, ORANGE, YELLOW, GREEN, BLUE, MAGENTA][floor(Int, round / 30) % 6 + 1]
-end
+get_color(m::Marked)::String = RAINBOW
 
 wall = Wall()
 empty_square = Empty()
