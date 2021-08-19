@@ -54,6 +54,9 @@ const qmlfile = joinpath(dirname(Base.source_path()), "qml", "tetris.qml")
 
 const SIDE = 20
 
+const REDRAW_BOARD = 1
+const REDRAW_NEXT = 2
+
 BoardCell = Union{Empty, Wall, Tetromino, Marked}
 
 mutable struct Events
@@ -223,11 +226,13 @@ SCORES = [40, 100, 300, 1000]
 
 function remove_lines!(game::Game)
     game.state.events.lines_completed = remove_lines!(game.board_state.board)
+    game_map["signal"] = REDRAW_BOARD | REDRAW_NEXT
 end
 
 function fall!(game::Game)
     board_state = game.board_state
     cur_tetromino = board_state.cur_tetromino
+    game_map["signal"] = REDRAW_BOARD
     if !move!(board_state, 1, 0, 0)
         merge_tetromino!(board_state.board, board_state.cur_tetromino)
         if mark_lines!(board_state.board)
@@ -237,6 +242,7 @@ function fall!(game::Game)
         check_ground!(game)
         next_tetromino!(game)
         update_game_board!(game)
+        game_map["signal"] |= REDRAW_NEXT
     end
 end
 
@@ -324,15 +330,25 @@ function key_press(key::Int32)
 
     cur_tetromino = board_state.cur_tetromino
     if key == KEY_LEFT
-        move!(board_state, 0, -1, 0)
+        if move!(board_state, 0, -1, 0)
+            game_map["signal"] = REDRAW_BOARD
+        end
     elseif key == KEY_RIGHT
-        move!(board_state, 0, 1, 0)
+        if move!(board_state, 0, 1, 0)
+            game_map["signal"] = REDRAW_BOARD
+        end
     elseif key == KEY_B
-        move!(board_state, 0, 0, 1)
+        if move!(board_state, 0, 0, 1)
+            game_map["signal"] = REDRAW_BOARD
+        end
     elseif key == KEY_N
-        move!(board_state, 0, 0, -1)
+        if move!(board_state, 0, 0, -1)
+            game_map["signal"] = REDRAW_BOARD
+        end
     elseif key == KEY_DOWN
-        move!(board_state, 1, 0, 0)
+        if move!(board_state, 1, 0, 0)
+            game_map["signal"] = REDRAW_BOARD
+        end
     end
 end
 
@@ -463,8 +479,8 @@ end
 game = nothing
 game_map = QML.JuliaPropertyMap("score" => "0", "lines" => 0, "level" => 0,
                                "gameLost" => 0, "gameStarted" => 0, "gameRestart" => 0,
-                                "gamePaused" => 0, "gameWon" => 0, "board" => [], "next" => []
-                               )
+                                "gamePaused" => 0, "gameWon" => 0, "board" => [], "next" => [],
+                                "signal" => 0)
 
 best = nothing
 best_map = QML.JuliaPropertyMap("linesCount" => 0, "score" => 0)
@@ -472,7 +488,6 @@ best_map = QML.JuliaPropertyMap("linesCount" => 0, "score" => 0)
 
 function init_game(game_type, level::Int32, height::Int32)
     global game, best
-    println(best)
     if game_type == "unlimited"
         game = game_unlimited(level, height, best["unlimited"])
     elseif game_type == "25"

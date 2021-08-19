@@ -23,26 +23,26 @@ Item {
                 canvasStack.push(tetrisCanvas)
                 canvasStack.push(information)
             }
-             pushEnter: Transition {
-                    PropertyAnimation {
-                        property: "opacity"
-                        from: 0
-                        to:1
-                        duration: 200
-                    }
+            pushEnter: Transition {
+                PropertyAnimation {
+                    property: "opacity"
+                    from: 0
+                    to:1
+                    duration: 200
                 }
-                pushExit: Transition {
+            }
+            pushExit: Transition {
+            }
+            popEnter: Transition {
+            }
+            popExit: Transition {
+                PropertyAnimation {
+                    property: "opacity"
+                    from: 1
+                    to:0
+                    duration: 200
                 }
-                popEnter: Transition {
-                }
-                popExit: Transition {
-                    PropertyAnimation {
-                        property: "opacity"
-                        from: 1
-                        to:0
-                        duration: 200
-                    }
-                }
+            }
         }
 
         ColumnLayout {
@@ -77,6 +77,19 @@ Item {
         }
     }
 
+    function hasRainbow() {
+        var rows = game.board
+        for (var i=0; i<rows.length; i++) {
+            var row = rows[i]
+            for (var j=0; j<row.length; j++) {
+                if (row[j] == "rainbow") {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
 
     Timer {
         id: timer
@@ -108,8 +121,13 @@ Item {
                 Julia.game_loop()
             }
 
-            tetrisCanvas.requestPaint();
-            nextBox.update();
+            if (hasRainbow() || game.signal & 1 == 1) {
+                tetrisCanvas.requestPaint();
+            }
+            if (game.signal & 2 == 2) {
+                nextBox.update();
+            }
+            game.signal = 2
          }
     }
 
