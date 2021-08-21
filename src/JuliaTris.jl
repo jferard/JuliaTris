@@ -113,9 +113,12 @@ mutable struct GameCleaner <: Game
 end
 
 function game_unlimited(base_level::Int32, base_height::Int32, best::Any)::Game
+    global best_map
     model = GameModel(base_level, base_height, 0, -1)
     board_state = new_board_state(model)
     state = new_game_state()
+    best_map["linesCount"] = best["linesCount"][1]
+    best_map["score"] = best["score"][1]
     return GameUnlimited(model, board_state, state)
 end
 
@@ -123,6 +126,7 @@ function game_25(base_level::Int32, base_height::Int32, best::Any)::Game
     model = GameModel(base_level, base_height, 25, -1)
     board_state = new_board_state(model)
     state = new_game_state()
+    best_map["score"] = best["score"][1]
     return Game25(model, board_state, state)
 end
 
@@ -130,6 +134,7 @@ function game_ground(base_level::Int32, base_height::Int32, best::Any)::Game
     model = GameModel(base_level, base_height, 0, -1)
     board_state = new_board_state(model)
     state = new_game_state()
+    best_map["score"] = best["score"][1]
     return GameGround(model, board_state, state)
 end
 
@@ -137,6 +142,7 @@ function game_cleaner(base_level::Int32, base_height::Int32, best::Any)::Game
     model = GameModel(base_level, base_height, 0, 1)
     board_state = new_board_state(model)
     state = new_game_state()
+    best_map["score"] = best["score"][1]
     return GameCleaner(model, board_state, state)
 end
 
@@ -209,14 +215,41 @@ end
 """
 Update the best scores as JSON object.
 """
-function update_best!(game::Game)
+update_best!(game::Game) = ()
+
+function update_best!(game::GameUnlimited)
     global best
+    cur_best = best["unlimited"]
     board_state = game.board_state
-    bestLinesCounts = best["unlimited"]["linesCount"]
-    if board_state.lines_count > bestLinesCounts[1]
-        # sort(vcat(bestLinesCounts, board_state.lines_count))[1:end-1]
-        # gameMap["bestScore"]
-        # gameMap["message"] = "bestScore" / "restart"
+
+    curLineCount = board_state.lines_count
+    bestLinesCounts = cur_best["linesCount"]
+    if curLineCount > bestLinesCounts[end-1]
+        cur_best["linesCount"] = sort(vcat(bestLinesCounts, [curLineCount]), rev=true)[1:end-1]
+    end
+
+    curScore = board_state.score
+    bestScores = cur_best["score"]
+    if curScore > bestScores[end-1]
+        cur_best["score"] = sort(vcat(bestScores, [curScore]), rev=true)[1:end-1]
+    end
+end
+
+update_best!(game::Game25) = update_best!(game, "25")
+
+update_best!(game::GameGround) = update_best!(game, "ground")
+
+update_best!(game::GameCleaner) = update_best!(game, "cleaner")
+
+function update_best!(game::Game, name::String)
+    global best
+    cur_best = best[name]
+    board_state = game.board_state
+
+    curScore = board_state.score
+    bestScores = cur_best["score"]
+    if curScore > bestScores[end-1]
+        cur_best["score"] = sort(vcat(bestScores, [curScore]), rev=true)[1:end-1]
     end
 end
 
@@ -512,6 +545,7 @@ try
     open("juliatris.json", "r") do source
         global best
         best = JSON.parse(source)
+        println(best)
     end
 catch e
     println(e)
@@ -521,5 +555,6 @@ loadqml(qmlfile, game = game_map, TILE_SIZE = 20, best = best_map)
 exec()
 
 open("juliatris.json", "w") do dest
+    println(best)
     JSON.print(dest, best)
 end
