@@ -35,11 +35,25 @@ ApplicationWindow {
         tetris.y = tetris.screen.virtualY + tetris.screen.height / 2 - tetris.height / 2;
     }
 
-    function drawSquares(ctx, startY, startX, rows) {
-        for (var i=0; i<rows.length; i++) {
-            var row = rows[i]
-            for (var j=0; j<row.length; j++) {
-                drawSquare(ctx, startY, startX, i, j, row[j])
+    function drawSquares(ctx, startY, startX, rows, previousRows) {
+        if (previousRows == null) {
+            for (var i=0; i<rows.length; i++) {
+                var row = rows[i]
+                for (var j=0; j<row.length; j++) {
+                    drawSquare(ctx, startY, startX, i, j, row[j])
+                }
+            }
+        } else {
+            for (var i=0; i<rows.length; i++) {
+                var row = rows[i]
+                var previousRow = previousRows[i]
+                for (var j=0; j<row.length; j++) {
+                    if (row[j] == previousRow[j] && row[j] != "rainbow") {
+                        // do not redraw
+                    } else {
+                        drawSquare(ctx, startY, startX, i, j, row[j])
+                    }
+                }
             }
         }
     }
@@ -49,14 +63,31 @@ ApplicationWindow {
             ctx.fillStyle = squareColor
             ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
         } else {
+            var color;
             if (squareColor == "rainbow") {
                 var s = Math.floor(Date.now() / 100) % 7
-                ctx.fillStyle = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"][s]
+                color = ["red", "orange", "yellow", "green", "blue", "indigo", "violet"][s]
             } else {
-                ctx.fillStyle = squareColor
+                color = squareColor
             }
+            ctx.fillStyle = "dimgray"
+            ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            ctx.fillStyle = color
             ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE-1, TILE_SIZE-1)
         }
+    }
+
+    function copyRows(rows) {
+        var otherRows = []
+        for (var i=0; i<rows.length; i++) {
+            var row = rows[i]
+            var otherRow = []
+            for (var j=0; j<row.length; j++) {
+                otherRow.push(row[j])
+            }
+            otherRows.push(otherRow)
+        }
+        return otherRows
     }
 
     StackView {

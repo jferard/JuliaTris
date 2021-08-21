@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.5
 import QtQuick.Layouts 1.0
+import "."
 
 ColumnLayout {
     signal update()
@@ -24,9 +25,12 @@ ColumnLayout {
 
         onPaint: {
             var ctx = nextCanvas.getContext('2d');
-            ctx.fillRect(0, 0, 4*TILE_SIZE, 2*TILE_SIZE)
             var rows = game.next
-            drawSquares(ctx, 0, 0, rows)
+            if (rows.length == 0) {
+                return;
+            }
+            drawSquares(ctx, 0, 0, rows, Global.nextRows)
+            Global.nextRows = copyRows(rows)
         }
     }
 }
