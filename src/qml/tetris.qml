@@ -59,9 +59,11 @@ ApplicationWindow {
     }
 
     function drawSquare(ctx, startY, startX, i, j, squareColor) {
+        var baseX = startX + j*TILE_SIZE
+        var baseY = startY + i*TILE_SIZE
         if (squareColor == "black") {
             ctx.fillStyle = squareColor
-            ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE)
         } else {
             var color;
             if (squareColor == "rainbow") {
@@ -70,10 +72,17 @@ ApplicationWindow {
             } else {
                 color = squareColor
             }
+            var edgeW = 1
             ctx.fillStyle = "dimgray"
-            ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            ctx.fillRect(baseX, baseY, TILE_SIZE, TILE_SIZE)
+            ctx.fillStyle = Qt.lighter(color)
+            ctx.fillRect(baseX, baseY, TILE_SIZE, edgeW)
+            ctx.fillRect(baseX, baseY, edgeW, TILE_SIZE)
+            ctx.fillStyle = Qt.darker(color)
+            ctx.fillRect(baseX, baseY + TILE_SIZE - edgeW, TILE_SIZE, edgeW)
+            ctx.fillRect(baseX + TILE_SIZE - edgeW, baseY, edgeW, TILE_SIZE)
             ctx.fillStyle = color
-            ctx.fillRect(startX + j*TILE_SIZE, startY + i*TILE_SIZE, TILE_SIZE-1, TILE_SIZE-1)
+            ctx.fillRect(baseX + edgeW + 1, baseY + edgeW + 1, TILE_SIZE - 2 * edgeW - 2, TILE_SIZE - 2 * edgeW - 2)
         }
     }
 
